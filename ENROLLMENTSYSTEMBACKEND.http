@@ -1,0 +1,6 @@
+@ENROLLMENTSYSTEMBACKEND_HostAddress = http://localhost:5173
+
+GET {{ENROLLMENTSYSTEMBACKEND_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
