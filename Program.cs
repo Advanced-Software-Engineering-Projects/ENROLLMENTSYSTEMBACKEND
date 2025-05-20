@@ -1,9 +1,18 @@
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
 using Microsoft.AspNetCore.Identity;
-
+using ENROLLMENTSYSTEMBACKEND.Data;
+using ENROLLMENTSYSTEMBACKEND.IRepositories;
+using ENROLLMENTSYSTEMBACKEND.IServices;
+using ENROLLMENTSYSTEMBACKEND.Models;
+using ENROLLMENTSYSTEMBACKEND.Repositories;
+using ENROLLMENTSYSTEMBACKEND.Services;
+using ENROLLMENTSYSTEMBACKEND.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -55,17 +64,35 @@ builder.Services.AddSwaggerGen(options =>
 });
 
 // Register DbContexts for the three databases
-
-
+builder.Services.AddDbContext<StudentInformationDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("StudentInformationConnection")));
+builder.Services.AddDbContext<CourseManagementDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("CourseManagementConnection")));
+builder.Services.AddDbContext<FinancialAndAdminDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("FinancialAndAdminConnection")));
 
 // Dependency Injection for Repositories
-
+builder.Services.AddScoped<IStudentRepository, StudentRepository>();
+builder.Services.AddScoped<IEnrollmentRepository, EnrollmentRepository>();
+builder.Services.AddScoped<IProgramRepository, ProgramRepository>();
+builder.Services.AddScoped<IProgramVersionRepository, ProgramVersionRepository>();
+builder.Services.AddScoped<ICourseRepository, CourseRepository>();
+builder.Services.AddScoped<IProgramCoursesRepository, ProgramCoursesRepository>();
+builder.Services.AddScoped<IPrerequisiteRepository, PrerequisiteRepository>();
+builder.Services.AddScoped<IAdminRepository, AdminRepository>();
+builder.Services.AddScoped<IFeeRepository, FeeRepository>();
+builder.Services.AddScoped<ISystemConfigRepository, SystemConfigRepository>();
+builder.Services.AddScoped<IUserActivityRepository, UserActivityRepository>();
 
 // Dependency Injection for Services
-
+builder.Services.AddScoped<IStudentService, StudentService>();
+builder.Services.AddScoped<IAdminService, AdminService>();
+builder.Services.AddScoped<ISystemConfigService, SystemConfigService>();
+builder.Services.AddScoped<IUserActivityService, UserActivityService>();
 
 // Add Password Hashers for Student and Admin
-
+builder.Services.AddSingleton<IPasswordHasher<Student>, PasswordHasher<Student>>();
+builder.Services.AddSingleton<IPasswordHasher<Admin>, PasswordHasher<Admin>>();
 
 // Add CORS policy
 builder.Services.AddCors(options =>
@@ -80,7 +107,29 @@ builder.Services.AddCors(options =>
         });
 });
 
+// Add JWT Authentication
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = builder.Configuration["Jwt:Issuer"],
+            ValidAudience = builder.Configuration["Jwt:Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
+        };
+    });
 
+// Add Authorization Policies
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("StudentOnly", policy => policy.RequireClaim(System.Security.Claims.ClaimTypes.Role, "STUDENT"));
+    options.AddPolicy("AdminOnly", policy => policy.RequireClaim(System.Security.Claims.ClaimTypes.Role, "ADMIN", "SAS_MANAGER"));
+});
 
 // Add Logging (optional but recommended)
 builder.Services.AddLogging();
