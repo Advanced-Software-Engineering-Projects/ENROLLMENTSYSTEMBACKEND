@@ -12,7 +12,6 @@ using ENROLLMENTSYSTEMBACKEND.IServices;
 using ENROLLMENTSYSTEMBACKEND.Models;
 using ENROLLMENTSYSTEMBACKEND.Repositories;
 using ENROLLMENTSYSTEMBACKEND.Services;
-using ENROLLMENTSYSTEMBACKEND.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
