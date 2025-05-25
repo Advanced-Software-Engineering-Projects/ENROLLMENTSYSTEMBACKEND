@@ -1,7 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
-using ENROLLMENTSYSTEMBACKEND.Data;
-using ENROLLMENTSYSTEMBACKEND.IRepositories;
-using ENROLLMENTSYSTEMBACKEND.Models;
+﻿using ENROLLMENTSYSTEMBACKEND.DTOs;
+using Microsoft.EntityFrameworkCore;
 
 namespace ENROLLMENTSYSTEMBACKEND.Repositories
 {
@@ -9,18 +7,38 @@ namespace ENROLLMENTSYSTEMBACKEND.Repositories
     {
         private readonly CourseManagementDbContext _context;
 
-        public PrerequisiteRepository(CourseManagementDbContext context) => _context = context;
-
-        public async Task<IEnumerable<Prerequisite>> GetPrerequisitesForCourseAsync(int courseId)
-            => await _context.Prerequisites.Where(p => p.CourseId == courseId).ToListAsync();
-
-        public async Task AddPrerequisiteAsync(Prerequisite prerequisite)
+        public PrerequisiteRepository(CourseManagementDbContext context)
         {
-            await _context.Prerequisites.AddAsync(prerequisite);
-            await _context.SaveChangesAsync();
+            _context = context;
         }
 
-        public async Task<IEnumerable<Prerequisite>> GetPrerequisitesForCoursesAsync(IEnumerable<int> courseIds)
-            => await _context.Prerequisites.Where(p => courseIds.Contains(p.CourseId)).ToListAsync();
+        public async Task<List<PrerequisiteDto>> GetPrerequisitesAsync(int courseId)
+        {
+            return await _context.Prerequisites
+                .Where(p => p.CourseId == courseId)
+                .Select(p => new PrerequisiteDto
+                {
+                    PrerequisiteCourseId = p.PrerequisiteCourseId,
+                    Code = p.PrerequisiteCourse.Code,
+                    Name = p.PrerequisiteCourse.Name
+                })
+                .ToListAsync();
+        }
+
+        public async Task<PrerequisiteGraphDto> GetPrerequisiteGraphAsync()
+        {
+            var allPrerequisites = await _context.Prerequisites
+                .Include(p => p.PrerequisiteCourse)
+                .ToListAsync();
+
+            var graph = allPrerequisites
+                .GroupBy(p => p.CourseId)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.Select(p => p.PrerequisiteCourseId).ToList()
+                );
+
+            return new PrerequisiteGraphDto { Graph = graph };
+        }
     }
 }

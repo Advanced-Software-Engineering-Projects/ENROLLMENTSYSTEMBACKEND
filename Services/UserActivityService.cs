@@ -1,30 +1,33 @@
-﻿using Newtonsoft.Json;
-using ENROLLMENTSYSTEMBACKEND.DTOs;
-using ENROLLMENTSYSTEMBACKEND.IRepositories;
-using ENROLLMENTSYSTEMBACKEND.IServices;
-using ENROLLMENTSYSTEMBACKEND.Models;
+﻿using ENROLLMENTSYSTEMBACKEND.Models;
+using ENROLLMENTSYSTEMBACKEND.Repositories;
 
 namespace ENROLLMENTSYSTEMBACKEND.Services
 {
     public class UserActivityService : IUserActivityService
     {
-        private readonly IUserActivityRepository _userActivityRepository;
+        private readonly IUserActivityRepository _repository;
 
-        public UserActivityService(IUserActivityRepository userActivityRepository) => _userActivityRepository = userActivityRepository;
-
-        public async Task LogActivityAsync(string userId, string userType, string action, object details)
+        public UserActivityService(IUserActivityRepository repository)
         {
-            await _userActivityRepository.AddActivityAsync(new UserActivity { UserId = userId, UserType = userType, Action = action, Timestamp = DateTime.UtcNow, Details = JsonConvert.SerializeObject(details) });
+            _repository = repository;
         }
 
-        public async Task<IEnumerable<UserActivityDto>> GetUserActivitiesAsync(string userId)
+        public async Task LogActivityAsync(string userId, string action, string details)
         {
-            return (await _userActivityRepository.GetActivitiesByUserIdAsync(userId)).Select(a => new UserActivityDto { ActivityId = a.ActivityId, UserId = a.UserId, UserType = a.UserType, Action = a.Action, Timestamp = a.Timestamp, Details = a.Details });
+            var activity = new UserActivity
+            {
+                UserId = userId,
+                Action = action,
+                Details = details,
+                Timestamp = DateTime.UtcNow
+            };
+            await _repository.AddAsync(activity); // Fixed method name
         }
 
-        public async Task<IEnumerable<UserActivityDto>> GetAuditLogsAsync(string? userId, DateTime? startDate, DateTime? endDate)
+        public async Task<List<UserActivity>> GetActivitiesAsync(string userId)
         {
-            return (await _userActivityRepository.GetActivitiesAsync(userId, startDate, endDate)).Select(a => new UserActivityDto { ActivityId = a.ActivityId, UserId = a.UserId, UserType = a.UserType, Action = a.Action, Timestamp = a.Timestamp, Details = a.Details });
+            // Added missing method in IUserActivityRepository
+            return await _repository.GetActivitiesByUserIdAsync(userId);
         }
     }
 }
