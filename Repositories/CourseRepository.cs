@@ -1,6 +1,4 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using ENROLLMENTSYSTEMBACKEND.Data;
-using ENROLLMENTSYSTEMBACKEND.IRepositories;
 using ENROLLMENTSYSTEMBACKEND.Models;
 
 namespace ENROLLMENTSYSTEMBACKEND.Repositories
@@ -9,12 +7,44 @@ namespace ENROLLMENTSYSTEMBACKEND.Repositories
     {
         private readonly CourseManagementDbContext _context;
 
-        public CourseRepository(CourseManagementDbContext context) => _context = context;
+        public CourseRepository(CourseManagementDbContext context)
+        {
+            _context = context;
+        }
 
-        public async Task<Course> GetCourseByIdAsync(int courseId) => await _context.Courses.FindAsync(courseId);
-        public async Task<IEnumerable<Course>> GetCoursesByIdsAsync(IEnumerable<int> courseIds) => await _context.Courses.Where(c => courseIds.Contains(c.CourseId)).ToListAsync();
-        public async Task<IEnumerable<Course>> GetAllCoursesAsync() => await _context.Courses.ToListAsync();
-        public async Task<int> GetTotalCreditsByCourseIdsAsync(IEnumerable<int> courseIds) => await _context.Courses.Where(c => courseIds.Contains(c.CourseId)).SumAsync(c => c.Credits);
-        public async Task AddCourseAsync(Course course) { await _context.Courses.AddAsync(course); await _context.SaveChangesAsync(); }
+        public async Task<List<Course>> GetAllAsync()
+        {
+            return await _context.Courses.ToListAsync();
+        }
+
+        public async Task<List<Course>> GetCoursesBySemesterAsync(string semester)
+        {
+            return await _context.Courses
+                .Where(c => c.SemesterOffered == semester)
+                .ToListAsync();
+        }
+
+        public async Task<List<Prerequisite>> GetPrerequisitesAsync(int courseId)
+        {
+            return await _context.Prerequisites
+                .Where(p => p.CourseId == courseId)
+                .Include(p => p.PrerequisiteCourse)
+                .ToListAsync();
+        }
+
+        public async Task<List<Prerequisite>> GetAllPrerequisitesAsync()
+        {
+            return await _context.Prerequisites
+                .Include(p => p.Course)
+                .Include(p => p.PrerequisiteCourse)
+                .ToListAsync();
+        }
+
+        public async Task<List<Course>> GetAvailableCoursesAsync(string semester)
+        {
+            return await _context.Courses
+                .Where(c => c.SemesterOffered == semester && c.IsAvailable)
+                .ToListAsync();
+        }
     }
 }

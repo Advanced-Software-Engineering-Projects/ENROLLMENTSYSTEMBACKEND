@@ -1,39 +1,37 @@
-﻿using ENROLLMENTSYSTEMBACKEND.DTOs;
-using ENROLLMENTSYSTEMBACKEND.IRepositories;
-using ENROLLMENTSYSTEMBACKEND.IServices;
-using ENROLLMENTSYSTEMBACKEND.Models;
+﻿using ENROLLMENTSYSTEMBACKEND.Models;
+using ENROLLMENTSYSTEMBACKEND.Repositories;
+using System.Threading.Tasks;
 
 namespace ENROLLMENTSYSTEMBACKEND.Services
 {
     public class SystemConfigService : ISystemConfigService
     {
-        private readonly ISystemConfigRepository _systemConfigRepository;
+        private readonly ISystemConfigRepository _repository;
 
-        public SystemConfigService(ISystemConfigRepository systemConfigRepository) => _systemConfigRepository = systemConfigRepository;
+        public SystemConfigService(ISystemConfigRepository repository)
+        {
+            _repository = repository;
+        }
 
-        public async Task<string> GetConfigValueAsync(string key) => await _systemConfigRepository.GetConfigValueAsync(key);
-        public async Task<IEnumerable<SystemConfigDto>> GetAllConfigsAsync() => (await _systemConfigRepository.GetAllConfigsAsync()).Select(c => new SystemConfigDto { ConfigId = c.ConfigId, Key = c.Key, Value = c.Value });
-        public async Task<SystemConfigDto> AddConfigAsync(SystemConfigDto configDto)
+        public async Task<string> GetConfigValueAsync(string key)
         {
-            var config = new SystemConfig { Key = configDto.Key, Value = configDto.Value };
-            await _systemConfigRepository.AddConfigAsync(config);
-            return new SystemConfigDto { ConfigId = config.ConfigId, Key = config.Key, Value = config.Value };
+            var config = await _repository.GetConfigByKeyAsync(key);
+            return config?.Value;
         }
-        public async Task<SystemConfigDto> UpdateConfigAsync(int configId, SystemConfigDto configDto)
+
+        public async Task SetConfigValueAsync(string key, string value)
         {
-            var config = (await _systemConfigRepository.GetAllConfigsAsync()).FirstOrDefault(c => c.ConfigId == configId);
-            if (config == null) throw new KeyNotFoundException("Config not found");
-            config.Key = configDto.Key;
-            config.Value = configDto.Value;
-            await _systemConfigRepository.UpdateConfigAsync(config);
-            return configDto;
-        }
-        public async Task<bool> DeleteConfigAsync(int configId)
-        {
-            var config = (await _systemConfigRepository.GetAllConfigsAsync()).FirstOrDefault(c => c.ConfigId == configId);
-            if (config == null) return false;
-            await _systemConfigRepository.DeleteConfigAsync(configId);
-            return true;
+            var config = await _repository.GetConfigByKeyAsync(key);
+            if (config == null)
+            {
+                config = new SystemConfig { Key = key, Value = value };
+                await _repository.AddConfigAsync(config);
+            }
+            else
+            {
+                config.Value = value;
+                await _repository.UpdateConfigAsync(config);
+            }
         }
     }
 }

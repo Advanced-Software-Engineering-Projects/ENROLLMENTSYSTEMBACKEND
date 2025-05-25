@@ -1,26 +1,52 @@
-﻿using Microsoft.EntityFrameworkCore;
-using ENROLLMENTSYSTEMBACKEND.Data;
-using ENROLLMENTSYSTEMBACKEND.IRepositories;
-using ENROLLMENTSYSTEMBACKEND.Models;
+﻿using ENROLLMENTSYSTEMBACKEND.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace ENROLLMENTSYSTEMBACKEND.Repositories
 {
     public class EnrollmentRepository : IEnrollmentRepository
     {
-        private readonly StudentInformationDbContext _context;
+        private readonly CourseManagementDbContext _context;
 
-        public EnrollmentRepository(StudentInformationDbContext context) => _context = context;
-
-        public async Task<Enrollment> GetEnrollmentByIdAsync(int enrollmentId) => await _context.Enrollments.FindAsync(enrollmentId);
-        public async Task<IEnumerable<Enrollment>> GetEnrollmentsByStudentAsync(string studentId) => await _context.Enrollments.Where(e => e.StudentId == studentId).ToListAsync();
-        public async Task<IEnumerable<Enrollment>> GetEnrollmentsByStudentAndSemesterAsync(string studentId, string semester) => await _context.Enrollments.Where(e => e.StudentId == studentId && e.Semester == semester).ToListAsync();
-        public async Task<IEnumerable<Enrollment>> GetEnrollmentsByStudentAndStatusAsync(string studentId, string status) => await _context.Enrollments.Where(e => e.StudentId == studentId && e.Status == status).ToListAsync();
-        public async Task AddEnrollmentAsync(Enrollment enrollment) { await _context.Enrollments.AddAsync(enrollment); await _context.SaveChangesAsync(); }
-        public async Task UpdateEnrollmentAsync(Enrollment enrollment) { _context.Enrollments.Update(enrollment); await _context.SaveChangesAsync(); }
-        public async Task DeleteEnrollmentAsync(int enrollmentId)
+        public EnrollmentRepository(CourseManagementDbContext context)
         {
-            var enrollment = await GetEnrollmentByIdAsync(enrollmentId);
-            if (enrollment != null) { _context.Enrollments.Remove(enrollment); await _context.SaveChangesAsync(); }
+            _context = context;
+        }
+
+        public async Task AddEnrollmentAsync(string studentId, int courseId, string semester)
+        {
+            var enrollment = new Enrollment
+            {
+                StudentId = studentId,
+                CourseId = courseId,
+                Semester = semester
+            };
+            _context.Enrollments.Add(enrollment);
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task RemoveEnrollmentAsync(string studentId, int courseId, string semester)
+        {
+            var enrollment = await _context.Enrollments
+                .FirstOrDefaultAsync(e => e.StudentId == studentId && e.CourseId == courseId && e.Semester == semester);
+            if (enrollment != null)
+            {
+                _context.Enrollments.Remove(enrollment);
+                await _context.SaveChangesAsync();
+            }
+        }
+
+        public async Task<List<Enrollment>> GetEnrollmentsByStudentAsync(string studentId)
+        {
+            return await _context.Enrollments
+                .Where(e => e.StudentId == studentId)
+                .ToListAsync();
+        }
+
+        public async Task<List<Course>> GetCoursesBySemesterAsync(string semester)
+        {
+            return await _context.Courses
+                .Where(c => c.SemesterOffered == semester && c.IsActive)
+                .ToListAsync();
         }
     }
 }

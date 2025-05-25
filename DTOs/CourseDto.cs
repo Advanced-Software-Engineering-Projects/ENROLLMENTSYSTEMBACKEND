@@ -8,4 +8,11 @@
         public int Credits { get; set; }
         public string SemesterOffered { get; set; }
     }
+
+    public class PrerequisiteDto
+    {
+        public int PrerequisiteCourseId { get; set; }
+        public string Code { get; set; }
+        public string Name { get; set; }
+    }
 }

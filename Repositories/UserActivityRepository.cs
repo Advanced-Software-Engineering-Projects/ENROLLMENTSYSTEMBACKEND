@@ -1,7 +1,6 @@
-﻿using Microsoft.EntityFrameworkCore;
-using ENROLLMENTSYSTEMBACKEND.Data;
-using ENROLLMENTSYSTEMBACKEND.IRepositories;
+﻿using ENROLLMENTSYSTEMBACKEND.Data;
 using ENROLLMENTSYSTEMBACKEND.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace ENROLLMENTSYSTEMBACKEND.Repositories
 {
@@ -9,17 +8,22 @@ namespace ENROLLMENTSYSTEMBACKEND.Repositories
     {
         private readonly FinancialAndAdminDbContext _context;
 
-        public UserActivityRepository(FinancialAndAdminDbContext context) => _context = context;
-
-        public async Task AddActivityAsync(UserActivity activity) { await _context.UserActivities.AddAsync(activity); await _context.SaveChangesAsync(); }
-        public async Task<IEnumerable<UserActivity>> GetActivitiesByUserIdAsync(string userId) => await _context.UserActivities.Where(a => a.UserId == userId).ToListAsync();
-        public async Task<IEnumerable<UserActivity>> GetActivitiesAsync(string? userId, DateTime? startDate, DateTime? endDate)
+        public UserActivityRepository(FinancialAndAdminDbContext context)
         {
-            var query = _context.UserActivities.AsQueryable();
-            if (!string.IsNullOrEmpty(userId)) query = query.Where(a => a.UserId == userId);
-            if (startDate.HasValue) query = query.Where(a => a.Timestamp >= startDate.Value);
-            if (endDate.HasValue) query = query.Where(a => a.Timestamp <= endDate.Value);
-            return await query.ToListAsync();
+            _context = context;
+        }
+
+        public async Task AddAsync(UserActivity activity)
+        {
+            _context.UserActivities.Add(activity);
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task<List<UserActivity>> GetActivitiesByUserIdAsync(string userId)
+        {
+            return await _context.UserActivities
+                .Where(activity => activity.UserId == userId)
+                .ToListAsync();
         }
     }
 }

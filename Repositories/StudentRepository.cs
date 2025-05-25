@@ -1,7 +1,6 @@
-﻿using Microsoft.EntityFrameworkCore;
-using ENROLLMENTSYSTEMBACKEND.Data;
-using ENROLLMENTSYSTEMBACKEND.IRepositories;
-using ENROLLMENTSYSTEMBACKEND.Models;
+﻿using ENROLLMENTSYSTEMBACKEND.Models;
+using Microsoft.EntityFrameworkCore;
+using StudentSystemBackend.Repositories;
 
 namespace ENROLLMENTSYSTEMBACKEND.Repositories
 {
@@ -9,16 +8,42 @@ namespace ENROLLMENTSYSTEMBACKEND.Repositories
     {
         private readonly StudentInformationDbContext _context;
 
-        public StudentRepository(StudentInformationDbContext context) => _context = context;
-
-        public async Task<Student> GetStudentByIdAsync(string studentId) => await _context.Students.FindAsync(studentId);
-        public async Task<IEnumerable<Student>> GetAllStudentsAsync() => await _context.Students.ToListAsync();
-        public async Task AddStudentAsync(Student student) { await _context.Students.AddAsync(student); await _context.SaveChangesAsync(); }
-        public async Task UpdateStudentAsync(Student student) { _context.Students.Update(student); await _context.SaveChangesAsync(); }
-        public async Task DeleteStudentAsync(string studentId)
+        public StudentRepository(StudentInformationDbContext context)
         {
-            var student = await GetStudentByIdAsync(studentId);
-            if (student != null) { _context.Students.Remove(student); await _context.SaveChangesAsync(); }
+            _context = context;
+        }
+
+        public async Task<Student> GetByIdAsync(string id)
+        {
+            return await _context.Students
+                .Include(s => s.Enrollments)
+                .ThenInclude(e => e.Course)
+                .FirstOrDefaultAsync(s => s.StudentId == id);
+        }
+
+        public async Task<Student> GetByEmailAsync(string email)
+        {
+            return await _context.Students
+                .FirstOrDefaultAsync(s => s.Email == email);
+        }
+
+        public async Task<List<Enrollment>> GetEnrollmentsByStudentIdAsync(string studentId)
+        {
+            return await _context.Enrollments
+                .Include(e => e.Course)
+                .Where(e => e.StudentId == studentId)
+                .ToListAsync();
+        }
+
+        public async Task<List<Student>> GetAllAsync()
+        {
+            return await _context.Students.ToListAsync();
+        }
+
+        public async Task UpdateAsync(Student student)
+        {
+            _context.Students.Update(student);
+            await _context.SaveChangesAsync();
         }
     }
 }
