@@ -2,7 +2,7 @@
 {
     public class PendingRequest
     {
-        public int Id { get; set; }
+        public int RequestId { get; set; }
         public string StudentId { get; set; }
         public string CourseCode { get; set; }
         public string RequestType { get; set; }
