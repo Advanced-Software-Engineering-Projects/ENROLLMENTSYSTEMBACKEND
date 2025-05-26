@@ -6,6 +6,8 @@ namespace ENROLLMENTSYSTEMBACKEND.Repositories
     public interface IAdminRepository
     {
         Task<Admin> GetByUsernameAsync(string username);
+        Task<Admin> GetByRefreshTokenAsync(string refreshToken); 
+        Task UpdateAsync(Admin admin);
         Task<int> GetRegisteredStudentsCountAsync();
         Task<int> GetActiveCoursesCountAsync();
         Task<int> GetPendingApprovalsCountAsync();

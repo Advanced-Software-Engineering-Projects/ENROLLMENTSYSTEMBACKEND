@@ -22,5 +22,22 @@ namespace ENROLLMENTSYSTEMBACKEND.Data
         public DbSet<SystemConfig> SystemConfigs { get; set; }
         public DbSet<UserActivity> UserActivities { get; set; }
 
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
+
+            // Configure Course-Prerequisite relationships
+            modelBuilder.Entity<Prerequisite>()
+                .HasOne(p => p.Course)
+                .WithMany(c => c.Prerequisites)
+                .HasForeignKey(p => p.CourseId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Prerequisite>()
+                .HasOne(p => p.PrerequisiteCourse)
+                .WithMany()
+                .HasForeignKey(p => p.PrerequisiteCourseId)
+                .OnDelete(DeleteBehavior.Restrict);
+        }
     }
 }

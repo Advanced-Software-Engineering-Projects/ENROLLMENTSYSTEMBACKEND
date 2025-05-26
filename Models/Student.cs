@@ -10,6 +10,8 @@ namespace ENROLLMENTSYSTEMBACKEND.Models
         public string Email { get; set; }
         public string Phone { get; set; }
         public string Password { get; set; }
+        public string RefreshToken { get; set; }
+        public DateTime RefreshTokenExpiry { get; set; }
         public int ProgramVersionId { get; set; }
         public int EnrollmentYear { get; set; }
         public ProgramVersion ProgramVersion { get; set; }

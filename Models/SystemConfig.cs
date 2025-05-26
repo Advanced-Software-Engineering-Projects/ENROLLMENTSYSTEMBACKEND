@@ -2,7 +2,7 @@
 {
     public class SystemConfig
     {
-        public int ConfigId { get; set; }
+        public int SystemConfigId { get; set; }
         public string Key { get; set; }
         public string Value { get; set; }
     }

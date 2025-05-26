@@ -52,7 +52,7 @@ namespace ENROLLMENTSYSTEMBACKEND.Migrations
 
                     b.HasKey("CourseId");
 
-                    b.ToTable("Courses", "StudentInfo");
+                    b.ToTable("Courses");
                 });
 
             modelBuilder.Entity("ENROLLMENTSYSTEMBACKEND.Models.Enrollment", b =>
@@ -88,7 +88,7 @@ namespace ENROLLMENTSYSTEMBACKEND.Migrations
 
                     b.HasIndex("StudentId");
 
-                    b.ToTable("Enrollments", "StudentInfo");
+                    b.ToTable("Enrollments");
                 });
 
             modelBuilder.Entity("ENROLLMENTSYSTEMBACKEND.Models.Fee", b =>
@@ -145,7 +145,7 @@ namespace ENROLLMENTSYSTEMBACKEND.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("FormSubmissions", "StudentInfo");
+                    b.ToTable("FormSubmissions");
                 });
 
             modelBuilder.Entity("ENROLLMENTSYSTEMBACKEND.Models.Prerequisite", b =>
@@ -168,7 +168,7 @@ namespace ENROLLMENTSYSTEMBACKEND.Migrations
 
                     b.HasIndex("PrerequisiteCourseId");
 
-                    b.ToTable("Prerequisites", "StudentInfo");
+                    b.ToTable("Prerequisites");
                 });
 
             modelBuilder.Entity("ENROLLMENTSYSTEMBACKEND.Models.ProgramCourse", b =>
@@ -269,11 +269,18 @@ namespace ENROLLMENTSYSTEMBACKEND.Migrations
                     b.Property<int>("ProgramVersionId")
                         .HasColumnType("int");
 
+                    b.Property<string>("RefreshToken")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("RefreshTokenExpiry")
+                        .HasColumnType("datetime2");
+
                     b.HasKey("StudentId");
 
                     b.HasIndex("ProgramVersionId");
 
-                    b.ToTable("Students", "StudentInfo");
+                    b.ToTable("Students");
                 });
 
             modelBuilder.Entity("ENROLLMENTSYSTEMBACKEND.Models.Enrollment", b =>
@@ -281,13 +288,13 @@ namespace ENROLLMENTSYSTEMBACKEND.Migrations
                     b.HasOne("ENROLLMENTSYSTEMBACKEND.Models.Course", "Course")
                         .WithMany("Enrollments")
                         .HasForeignKey("CourseId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("ENROLLMENTSYSTEMBACKEND.Models.Student", "Student")
                         .WithMany("Enrollments")
                         .HasForeignKey("StudentId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Course");
@@ -317,7 +324,7 @@ namespace ENROLLMENTSYSTEMBACKEND.Migrations
                     b.HasOne("ENROLLMENTSYSTEMBACKEND.Models.Course", "PrerequisiteCourse")
                         .WithMany()
                         .HasForeignKey("PrerequisiteCourseId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Course");

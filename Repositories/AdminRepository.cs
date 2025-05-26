@@ -15,7 +15,7 @@ namespace ENROLLMENTSYSTEMBACKEND.Repositories
             _context = context;
         }
 
-        // Existing methods (assumed to be present)
+        // Existing methods
         public async Task<Admin> GetByUsernameAsync(string username)
         {
             return await _context.Admins.FirstOrDefaultAsync(a => a.Username == username || a.Email == username);
@@ -36,7 +36,11 @@ namespace ENROLLMENTSYSTEMBACKEND.Repositories
             return await _context.PendingRequests.CountAsync(r => r.Status == "Pending");
         }
 
-        // Newly implemented methods to fix the errors
+        public async Task<Admin> GetByRefreshTokenAsync(string refreshToken)
+        {
+            return await _context.Admins.FirstOrDefaultAsync(a => a.RefreshToken == refreshToken);
+        }
+
         public async Task<List<PendingRequest>> GetPendingRequestsAsync()
         {
             return await _context.PendingRequests.ToListAsync();
@@ -52,7 +56,6 @@ namespace ENROLLMENTSYSTEMBACKEND.Repositories
             return await _context.CompletionRates.ToListAsync();
         }
 
-        // Additional methods (assumed part of the interface)
         public async Task<List<Student>> GetAllStudentsAsync()
         {
             return await _context.Students.ToListAsync();
@@ -93,6 +96,13 @@ namespace ENROLLMENTSYSTEMBACKEND.Repositories
                 period.IsActive = false;
                 await _context.SaveChangesAsync();
             }
+        }
+
+        // Newly added method to fix the error
+        public async Task UpdateAsync(Admin admin)
+        {
+            _context.Admins.Update(admin);
+            await _context.SaveChangesAsync();
         }
     }
 }

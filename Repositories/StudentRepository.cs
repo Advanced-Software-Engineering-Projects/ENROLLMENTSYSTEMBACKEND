@@ -27,6 +27,12 @@ namespace ENROLLMENTSYSTEMBACKEND.Repositories
                 .FirstOrDefaultAsync(s => s.Email == email);
         }
 
+        public async Task<Student> GetByRefreshTokenAsync(string refreshToken)
+        {
+            return await _context.Students
+                .FirstOrDefaultAsync(s => s.RefreshToken == refreshToken);
+        }
+
         public async Task<List<Enrollment>> GetEnrollmentsByStudentIdAsync(string studentId)
         {
             return await _context.Enrollments

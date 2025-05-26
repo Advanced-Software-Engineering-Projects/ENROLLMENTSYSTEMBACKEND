@@ -3,16 +3,19 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
 
-namespace ENROLLMENTSYSTEMBACKEND.Migrations.CourseManagementDb
+namespace ENROLLMENTSYSTEMBACKEND.Migrations
 {
-    [DbContext(typeof(CourseManagementDbContext))]
-    partial class CourseManagementDbContextModelSnapshot : ModelSnapshot
+    [DbContext(typeof(StudentInformationDbContext))]
+    [Migration("20250526120714_InitialCreate")]
+    partial class InitialCreate
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -120,6 +123,34 @@ namespace ENROLLMENTSYSTEMBACKEND.Migrations.CourseManagementDb
                     b.ToTable("Fee");
                 });
 
+            modelBuilder.Entity("ENROLLMENTSYSTEMBACKEND.Models.FormSubmission", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Data")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FormType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("StudentId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("SubmissionDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("FormSubmissions");
+                });
+
             modelBuilder.Entity("ENROLLMENTSYSTEMBACKEND.Models.Prerequisite", b =>
                 {
                     b.Property<int>("PrerequisiteId")
@@ -163,7 +194,7 @@ namespace ENROLLMENTSYSTEMBACKEND.Migrations.CourseManagementDb
 
                     b.HasIndex("ProgramVersionId");
 
-                    b.ToTable("ProgramCourses");
+                    b.ToTable("ProgramCourse");
                 });
 
             modelBuilder.Entity("ENROLLMENTSYSTEMBACKEND.Models.ProgramVersion", b =>
@@ -187,7 +218,7 @@ namespace ENROLLMENTSYSTEMBACKEND.Migrations.CourseManagementDb
 
                     b.HasIndex("ProgramId");
 
-                    b.ToTable("ProgramVersions");
+                    b.ToTable("ProgramVersion");
                 });
 
             modelBuilder.Entity("ENROLLMENTSYSTEMBACKEND.Models.Programs", b =>
@@ -252,7 +283,7 @@ namespace ENROLLMENTSYSTEMBACKEND.Migrations.CourseManagementDb
 
                     b.HasIndex("ProgramVersionId");
 
-                    b.ToTable("Student");
+                    b.ToTable("Students");
                 });
 
             modelBuilder.Entity("ENROLLMENTSYSTEMBACKEND.Models.Enrollment", b =>

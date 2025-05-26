@@ -30,4 +30,22 @@ public class AuthController : ControllerBase
             return StatusCode(500, new { message = "An error occurred", details = ex.Message });
         }
     }
+
+    [HttpPost("refresh")]
+    public async Task<IActionResult> Refresh([FromBody] RefreshTokenDto refreshTokenDto)
+    {
+        try
+        {
+            var user = await _authService.RefreshTokenAsync(refreshTokenDto.RefreshToken);
+            return Ok(user);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Unauthorized(new { message = "Invalid refresh token" });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "An error occurred", details = ex.Message });
+        }
+    }
 }
