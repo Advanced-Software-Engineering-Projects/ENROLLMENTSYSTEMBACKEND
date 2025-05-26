@@ -1,5 +1,4 @@
-﻿using ENROLLMENTSYSTEMBACKEND.Models;
-
+﻿
 namespace ENROLLMENTSYSTEMBACKEND.Models
 {
     public class Course
@@ -14,5 +13,6 @@ namespace ENROLLMENTSYSTEMBACKEND.Models
         public ICollection<Enrollment> Enrollments { get; set; }
         public ICollection<ProgramCourse> ProgramCourses { get; set; }
         public ICollection<Prerequisite> Prerequisites { get; set; }
+        public ICollection<Prerequisite> IsPrerequisiteFor { get; set; }
     }
 }
