@@ -29,7 +29,7 @@ namespace ENROLLMENTSYSTEMBACKEND.Services
                 PendingApprovals = pendingApprovals,
                 PendingRequests = pendingRequests.Select(r => new PendingRequestDto
                 {
-                    Id = r.RequestId,
+                    Id = r.PendingRequestId,
                     StudentId = r.StudentId,
                     CourseCode = r.CourseCode,
                     RequestType = r.RequestType,

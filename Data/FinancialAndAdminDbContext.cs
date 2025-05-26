@@ -24,36 +24,20 @@ namespace ENROLLMENTSYSTEMBACKEND.Data
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            // Map shared entities to unique tables and schemas
-            modelBuilder.Entity<Student>().ToTable("Students", schema: "FinancialAndAdmin");
-            modelBuilder.Entity<Course>().ToTable("Courses", schema: "FinancialAndAdmin");
+            base.OnModelCreating(modelBuilder);
 
-            // Map other entities
-            modelBuilder.Entity<Admin>().ToTable("Admins", schema: "FinancialAndAdmin");
-            modelBuilder.Entity<Fee>().ToTable("Fees", schema: "FinancialAndAdmin");
-            modelBuilder.Entity<PendingRequest>().ToTable("PendingRequests", schema: "FinancialAndAdmin");
-            modelBuilder.Entity<EnrollmentData>().ToTable("EnrollmentData", schema: "FinancialAndAdmin");
-            modelBuilder.Entity<CompletionRate>().ToTable("CompletionRates", schema: "FinancialAndAdmin");
-            modelBuilder.Entity<Hold>().ToTable("Holds", schema: "FinancialAndAdmin");
-            modelBuilder.Entity<RegistrationPeriod>().ToTable("RegistrationPeriods", schema: "FinancialAndAdmin");
-            modelBuilder.Entity<SystemConfig>().ToTable("SystemConfigs", schema: "FinancialAndAdmin");
-            modelBuilder.Entity<UserActivity>().ToTable("UserActivities", schema: "FinancialAndAdmin");
+            // Configure Course-Prerequisite relationships
+            modelBuilder.Entity<Prerequisite>()
+                .HasOne(p => p.Course)
+                .WithMany(c => c.Prerequisites)
+                .HasForeignKey(p => p.CourseId)
+                .OnDelete(DeleteBehavior.Restrict);
 
-            // Define primary keys
-            modelBuilder.Entity<Student>().HasKey(s => s.StudentId);
-            modelBuilder.Entity<Course>().HasKey(c => c.CourseId);
-            modelBuilder.Entity<Admin>().HasKey(a => a.AdminId);
-            modelBuilder.Entity<Fee>().HasKey(f => f.FeeId);
-            modelBuilder.Entity<PendingRequest>().HasKey(pr => pr.RequestId);
-            modelBuilder.Entity<EnrollmentData>().HasKey(ed => ed.EnrollmentDataId);
-            modelBuilder.Entity<CompletionRate>().HasKey(cr => cr.CompletionRateId);
-            modelBuilder.Entity<Hold>().HasKey(h => h.HoldId);
-            modelBuilder.Entity<RegistrationPeriod>().HasKey(rp => rp.RegistrationPeriodId);
-            modelBuilder.Entity<SystemConfig>().HasKey(sc => sc.ConfigId);
-            modelBuilder.Entity<UserActivity>().HasKey(ua => ua.ActivityId);
-
-            // Optional: Ignore navigation properties not needed in this context
-            modelBuilder.Entity<Student>().Ignore(s => s.Enrollments);
+            modelBuilder.Entity<Prerequisite>()
+                .HasOne(p => p.PrerequisiteCourse)
+                .WithMany()
+                .HasForeignKey(p => p.PrerequisiteCourseId)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

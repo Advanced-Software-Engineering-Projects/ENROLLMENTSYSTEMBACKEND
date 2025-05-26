@@ -61,16 +61,13 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
-// Register DbContexts with retry logic for resilience
+// Register DbContexts for the three databases
 builder.Services.AddDbContext<StudentInformationDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("StudentInformationConnection"),
-        sqlOptions => sqlOptions.EnableRetryOnFailure(maxRetryCount: 5, maxRetryDelay: TimeSpan.FromSeconds(30), null)));
+    options.UseSqlServer(builder.Configuration.GetConnectionString("StudentInformationConnection")));
 builder.Services.AddDbContext<CourseManagementDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("CourseManagementConnection"),
-        sqlOptions => sqlOptions.EnableRetryOnFailure(maxRetryCount: 5, maxRetryDelay: TimeSpan.FromSeconds(30), null)));
+    options.UseSqlServer(builder.Configuration.GetConnectionString("CourseManagementConnection")));
 builder.Services.AddDbContext<FinancialAndAdminDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("FinancialAndAdminConnection"),
-        sqlOptions => sqlOptions.EnableRetryOnFailure(maxRetryCount: 5, maxRetryDelay: TimeSpan.FromSeconds(30), null)));
+    options.UseSqlServer(builder.Configuration.GetConnectionString("FinancialAndAdminConnection")));
 
 // Dependency Injection for Repositories
 builder.Services.AddScoped<IStudentRepository, StudentRepository>();

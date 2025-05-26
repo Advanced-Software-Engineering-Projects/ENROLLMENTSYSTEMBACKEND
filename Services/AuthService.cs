@@ -5,6 +5,7 @@ using ENROLLMENTSYSTEMBACKEND.Repositories;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using System.Security.Cryptography;
 using StudentSystemBackend.Repositories;
 
 namespace ENROLLMENTSYSTEMBACKEND.Services
@@ -25,21 +26,64 @@ namespace ENROLLMENTSYSTEMBACKEND.Services
         public async Task<UserDto> LoginAsync(LoginDto loginDto)
         {
             var student = await _studentRepository.GetByEmailAsync(loginDto.Username);
-            if (student != null && student.Password == loginDto.Password) // Simplified check; use proper hashing in production
+            if (student != null && student.Password == loginDto.Password)
             {
-                return GenerateUserDto(student.StudentId, student.FirstName, student.LastName, student.Email, "student");
+                var refreshToken = GenerateRefreshToken();
+                student.RefreshToken = refreshToken;
+                student.RefreshTokenExpiry = DateTime.Now.AddDays(7);
+                await _studentRepository.UpdateAsync(student);
+                return GenerateUserDto(student.StudentId, student.FirstName, student.LastName, student.Email, "student", refreshToken);
             }
 
             var admin = await _adminRepository.GetByUsernameAsync(loginDto.Username);
             if (admin != null && admin.Password == loginDto.Password)
             {
-                return GenerateUserDto(admin.AdminId, admin.Username, "", admin.Email, "admin");
+                var refreshToken = GenerateRefreshToken();
+                admin.RefreshToken = refreshToken;
+                admin.RefreshTokenExpiry = DateTime.Now.AddDays(7);
+                await _adminRepository.UpdateAsync(admin);
+                return GenerateUserDto(admin.AdminId, admin.Username, "", admin.Email, "admin", refreshToken);
             }
 
             throw new UnauthorizedAccessException("Invalid credentials");
         }
 
-        private UserDto GenerateUserDto(string id, string firstName, string lastName, string email, string role)
+        public async Task<UserDto> RefreshTokenAsync(string refreshToken)
+        {
+            var student = await _studentRepository.GetByRefreshTokenAsync(refreshToken);
+            if (student != null && student.RefreshTokenExpiry > DateTime.Now)
+            {
+                var newRefreshToken = GenerateRefreshToken();
+                student.RefreshToken = newRefreshToken;
+                student.RefreshTokenExpiry = DateTime.Now.AddDays(7);
+                await _studentRepository.UpdateAsync(student);
+                return GenerateUserDto(student.StudentId, student.FirstName, student.LastName, student.Email, "student", newRefreshToken);
+            }
+
+            var admin = await _adminRepository.GetByRefreshTokenAsync(refreshToken);
+            if (admin != null && admin.RefreshTokenExpiry > DateTime.Now)
+            {
+                var newRefreshToken = GenerateRefreshToken();
+                admin.RefreshToken = newRefreshToken;
+                admin.RefreshTokenExpiry = DateTime.Now.AddDays(7);
+                await _adminRepository.UpdateAsync(admin);
+                return GenerateUserDto(admin.AdminId, admin.Username, "", admin.Email, "admin", newRefreshToken);
+            }
+
+            throw new UnauthorizedAccessException("Invalid refresh token");
+        }
+
+        private string GenerateRefreshToken()
+        {
+            var randomNumber = new byte[32];
+            using (var rng = RandomNumberGenerator.Create())
+            {
+                rng.GetBytes(randomNumber);
+                return Convert.ToBase64String(randomNumber);
+            }
+        }
+
+        private UserDto GenerateUserDto(string id, string firstName, string lastName, string email, string role, string refreshToken)
         {
             var claims = new[]
             {
@@ -66,7 +110,8 @@ namespace ENROLLMENTSYSTEMBACKEND.Services
                 LastName = lastName,
                 Email = email,
                 Role = role,
-                Token = new JwtSecurityTokenHandler().WriteToken(token)
+                Token = new JwtSecurityTokenHandler().WriteToken(token),
+                RefreshToken = refreshToken
             };
         }
     }

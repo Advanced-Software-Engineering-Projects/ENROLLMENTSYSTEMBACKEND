@@ -6,6 +6,7 @@ namespace ENROLLMENTSYSTEMBACKEND.Models
 {
     public class Programs
     {
+        [Key]
         public int ProgramId { get; set; }
         public string Name { get; set; }
         public ICollection<ProgramVersion> ProgramVersions { get; set; }
