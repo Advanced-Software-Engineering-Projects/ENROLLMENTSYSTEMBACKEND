@@ -37,10 +37,11 @@ namespace ENROLLMENTSYSTEMBACKEND.Controllers
                 return Unauthorized(new { Message = "Invalid email or password" });
             }
 
-            // Store user ID in session
+            var token = GenerateJwtToken(user);
+            // Optionally keep session for other purposes, but not required for JWT
             HttpContext.Session.SetString("UserId", user.Id);
             _logger.LogInformation("Login successful for email: {Email}, UserId: {UserId}", loginDto.Email, user.Id);
-            return Ok(new { Message = "Login successful", UserId = user.Id });
+            return Ok(new { Message = "Login successful", Token = token });
         }
 
         private string GenerateJwtToken(User user)
