@@ -1,14 +1,9 @@
-﻿
-
-using System.ComponentModel.DataAnnotations;
-
-namespace ENROLLMENTSYSTEMBACKEND.Models
+﻿namespace ENROLLMENTSYSTEMBACKEND.Models
 {
     public class Programs
     {
-        [Key]
-        public int ProgramId { get; set; }
+        public string Id { get; set; }
         public string Name { get; set; }
-        public ICollection<ProgramVersion> ProgramVersions { get; set; }
+        public List<string> RequiredCourseIds { get; set; } = new List<string>();
     }
 }

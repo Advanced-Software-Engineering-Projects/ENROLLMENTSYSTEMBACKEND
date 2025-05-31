@@ -1,51 +1,113 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using ENROLLMENTSYSTEMBACKEND.DTOs;
+using ENROLLMENTSYSTEMBACKEND.Models;
 using ENROLLMENTSYSTEMBACKEND.Services;
-using ENROLLMENTSYSTEMBACKEND.DTOs;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
 
-[ApiController]
-[Route("api/auth")]
-public class AuthController : ControllerBase
+namespace ENROLLMENTSYSTEMBACKEND.Controllers
 {
-    private readonly IAuthService _authService;
-
-    public AuthController(IAuthService authService)
+    [ApiController]
+    [Route("api/auth")]
+    public class AuthController : ControllerBase
     {
-        _authService = authService;
-    }
+        private readonly IAuthService _authService;
+        private readonly ILogger<AuthController> _logger;
+        private readonly IConfiguration _configuration;
 
-    [HttpPost("login")]
-    public async Task<IActionResult> Login([FromBody] LoginDto loginDto)
-    {
-        try
+        public AuthController(IAuthService authService, ILogger<AuthController> logger, IConfiguration configuration)
         {
-            var user = await _authService.LoginAsync(loginDto);
-            return Ok(user);
+            _authService = authService;
+            _logger = logger;
+            _configuration = configuration;
         }
-        catch (UnauthorizedAccessException)
-        {
-            return Unauthorized(new { message = "Invalid credentials" });
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "An error occurred", details = ex.Message });
-        }
-    }
 
-    [HttpPost("refresh")]
-    public async Task<IActionResult> Refresh([FromBody] RefreshTokenDto refreshTokenDto)
-    {
-        try
+        [HttpPost("login")]
+        public async Task<IActionResult> Login([FromBody] LoginDto loginDto)
         {
-            var user = await _authService.RefreshTokenAsync(refreshTokenDto.RefreshToken);
-            return Ok(user);
+            _logger.LogInformation("Login attempt for email: {Email}", loginDto.Email);
+
+            var user = await _authService.AuthenticateAsync(loginDto.Email, loginDto.Password);
+            if (user == null)
+            {
+                _logger.LogWarning("Authentication failed for email: {Email}", loginDto.Email);
+                return Unauthorized(new { Message = "Invalid email or password" });
+            }
+
+            // Store user ID in session
+            HttpContext.Session.SetString("UserId", user.Id);
+            _logger.LogInformation("Login successful for email: {Email}, UserId: {UserId}", loginDto.Email, user.Id);
+            return Ok(new { Message = "Login successful", UserId = user.Id });
         }
-        catch (UnauthorizedAccessException)
+
+        private string GenerateJwtToken(User user)
         {
-            return Unauthorized(new { message = "Invalid refresh token" });
+            var claims = new[]
+            {
+                new Claim(JwtRegisteredClaimNames.Sub, user.Id),
+                new Claim(JwtRegisteredClaimNames.Email, user.Email),
+                new Claim(ClaimTypes.Role, user.Role ?? "Student"), // Add role if applicable
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+            };
+
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
+            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+            var token = new JwtSecurityToken(
+                issuer: _configuration["Jwt:Issuer"],
+                audience: _configuration["Jwt:Audience"],
+                claims: claims,
+                expires: DateTime.Now.AddMinutes(30), // Token expiration
+                signingCredentials: creds);
+
+            return new JwtSecurityTokenHandler().WriteToken(token);
         }
-        catch (Exception ex)
+
+        [HttpPost("ResetUserPassword")]
+        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDto dto)
         {
-            return StatusCode(500, new { message = "An error occurred", details = ex.Message });
+            if (!ModelState.IsValid)
+            {
+                _logger.LogWarning("Invalid data for password reset: {Errors}", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage));
+                return BadRequest("Invalid data.");
+            }
+
+            var result = await _authService.ResetPasswordAsync(dto.Token, dto.NewPassword);
+
+            if (result.StartsWith("Invalid") || result.StartsWith("expired"))
+            {
+                _logger.LogWarning("Password reset failed: {Result}", result);
+                return BadRequest(result);
+            }
+
+            _logger.LogInformation("Password reset successful");
+            return Ok(result);
+        }
+
+        [HttpPost("logout")]
+        public IActionResult Logout()
+        {
+            HttpContext.Session.Clear();
+            _logger.LogInformation("User logged out successfully");
+            return Ok(new { Message = "Logout successful" });
+        }
+
+        [HttpPost("extend-session")]
+        public IActionResult ExtendSession()
+        {
+            if (HttpContext.Session.GetString("UserId") == null)
+            {
+                _logger.LogWarning("Session expired during extend-session attempt");
+                return Unauthorized(new { Message = "Session expired" });
+            }
+
+            // Extend the session by resetting the idle timeout
+            HttpContext.Session.SetString("UserId", HttpContext.Session.GetString("UserId"));
+            _logger.LogInformation("Session extended for UserId: {UserId}", HttpContext.Session.GetString("UserId"));
+            return Ok(new { Message = "Session extended" });
         }
     }
 }

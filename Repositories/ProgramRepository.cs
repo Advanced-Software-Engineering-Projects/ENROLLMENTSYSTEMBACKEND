@@ -1,41 +1,17 @@
-﻿using Microsoft.EntityFrameworkCore;
-using ENROLLMENTSYSTEMBACKEND.Models;
+﻿using ENROLLMENTSYSTEMBACKEND.Models;
 
 namespace ENROLLMENTSYSTEMBACKEND.Repositories
 {
     public class ProgramRepository : IProgramRepository
     {
-        private readonly CourseManagementDbContext _context;
-
-        public ProgramRepository(CourseManagementDbContext context)
+        private readonly List<Programs> _programs = new List<Programs>
         {
-            _context = context;
-        }
+            new Programs { Id = "P1", Name = "Computer Science", RequiredCourseIds = new List<string> { "C1", "C2", "C3" } }
+        };
 
-        public async Task<Programs> GetByIdAsync(int id)
+        public async Task<Programs> GetProgramByIdAsync(string programId)
         {
-            return await _context.Programs
-                .Include(p => p.ProgramVersions)
-                .FirstOrDefaultAsync(p => p.ProgramId == id);
-        }
-
-        public async Task<List<ProgramCourse>> GetProgramCoursesAsync(int programVersionId)
-        {
-            return await _context.ProgramCourses
-                .Where(pc => pc.ProgramVersionId == programVersionId)
-                .Include(pc => pc.Course)
-                .ToListAsync();
-        }
-
-        public async Task<ProgramVersion> GetProgramVersionAsync(int programVersionId)
-        {
-            return await _context.ProgramVersions
-                .FirstOrDefaultAsync(pv => pv.ProgramVersionId == programVersionId);
-        }
-
-        Task IProgramRepository.GetProgramVersionAsync(int programVersionId)
-        {
-            return GetProgramVersionAsync(programVersionId);
+            return await Task.FromResult(_programs.FirstOrDefault(p => p.Id == programId));
         }
     }
 }

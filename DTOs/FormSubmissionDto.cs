@@ -2,12 +2,10 @@
 {
     public class FormSubmissionDto
     {
+        public string SubmissionId { get; set; }
         public string StudentId { get; set; }
-        public string CourseCode { get; set; }
-        public string Semester { get; set; }
-        public string Year { get; set; }
-        public string Reason { get; set; }
-        public string CurrentGrade { get; set; }
-        public string EmailStatus { get; set; }
+        public string FormType { get; set; }
+        public string Status { get; set; }
+        public DateTime SubmissionDate { get; set; }
     }
 }

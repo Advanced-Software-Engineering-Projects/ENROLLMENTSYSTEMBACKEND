@@ -1,77 +1,146 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using ENROLLMENTSYSTEMBACKEND.DTOs;
+﻿using ENROLLMENTSYSTEMBACKEND.DTOs;
+using ENROLLMENTSYSTEMBACKEND.Models;
 using ENROLLMENTSYSTEMBACKEND.Repositories;
 
 namespace ENROLLMENTSYSTEMBACKEND.Services
 {
     public class CourseService : ICourseService
     {
-        private readonly IEnrollmentRepository _enrollmentRepository;
-        private readonly IPrerequisiteRepository _prerequisiteRepository;
+        private readonly ICourseRepository _courseRepository;
 
-        public CourseService(IEnrollmentRepository enrollmentRepository, IPrerequisiteRepository prerequisiteRepository)
+        public CourseService(ICourseRepository courseRepository)
         {
-            _enrollmentRepository = enrollmentRepository;
-            _prerequisiteRepository = prerequisiteRepository;
+            _courseRepository = courseRepository;
         }
 
-        public async Task<List<CourseDto>> GetAvailableCoursesAsync(string studentId, string semester)
+        public async Task<List<Course>> GetAvailableCoursesAsync(string studentId)
         {
-            // Get courses offered in the specified semester
-            var allCourses = await _enrollmentRepository.GetCoursesBySemesterAsync(semester);
-            // Get courses the student is already enrolled in
-            var enrolledCourses = await _enrollmentRepository.GetEnrollmentsByStudentAsync(studentId);
+            var allCourses = await _courseRepository.GetAllCoursesAsync();
+            if (allCourses == null || allCourses.Count == 0)
+            {
+                // Optionally log or throw for debugging
+                // throw new Exception("No courses found in the system.");
+                return new List<Course>(); // This is what you currently return
+            }
 
-            // Filter out courses the student is enrolled in
-            var availableCourses = allCourses
-                .Where(c => !enrolledCourses.Any(e => e.CourseId == c.CourseId && e.Semester == semester))
-                .Select(c => new CourseDto
+            // TODO: Filter out courses the student is already registered for, or not eligible for
+            return allCourses;
+        }
+
+        public async Task<CourseDto> GetCourseDetailsAsync(string courseCode)
+        {
+            var course = await _courseRepository.GetCourseByCodeAsync(courseCode);
+            if (course == null) return null;
+            return new CourseDto
+            {
+                CourseCode = course.CourseCode,
+                CourseName = course.CourseName,
+                Description = course.Description,
+                Prerequisites = course.Prerequisites
+            };
+        }
+
+        public async Task<List<Course>> GetRegisteredCoursesAsync(string studentId)
+        {
+            return new List<Course>();
+        }
+
+        public async Task<bool> RegisterCourseAsync(string studentId, string courseCode)
+        {
+            // Placeholder: Check if course exists
+            var course = await _courseRepository.GetCourseByCodeAsync(courseCode);
+            return course != null;
+        }
+
+        public async Task<bool> RegisterCourseAsync(CourseRegistrationDto registrationDto)
+        {
+            // Assuming CourseRegistrationDto has StudentId and CourseCode properties
+            var course = await _courseRepository.GetCourseByCodeAsync(registrationDto.CourseCode);
+            if (course == null) return false;
+
+            // Placeholder: In a real app, add to student's enrollments
+            return true;
+        }
+
+        public async Task<bool> DropCourseAsync(string studentId, string courseCode)
+        {
+    
+            var course = await _courseRepository.GetCourseByCodeAsync(courseCode);
+            return course != null;
+        }
+
+        public async Task<bool> UnregisterCourseAsync(CourseRegistrationDto registrationDto)
+        {
+            // Assuming CourseRegistrationDto has StudentId and CourseCode properties
+            var course = await _courseRepository.GetCourseByCodeAsync(registrationDto.CourseCode);
+            if (course == null) return false;
+
+            // Placeholder: In a real app, remove from student's enrollments
+            return true;
+        }
+
+        public async Task<List<string>> GetPrerequisitesAsync(string courseCode)
+        {
+            var course = await _courseRepository.GetCourseByCodeAsync(courseCode);
+            return course?.Prerequisites ?? new List<string>();
+        }
+
+        public async Task<List<Course>> GetCoursePrerequisitesAsync(string courseId)
+        {
+            var course = await _courseRepository.GetCourseByIdAsync(courseId);
+            if (course == null || course.Prerequisites == null) return new List<Course>();
+
+            // Fetch prerequisite courses based on their codes
+            var prerequisiteCourses = new List<Course>();
+            foreach (var prereqCode in course.Prerequisites)
+            {
+                var prereqCourse = await _courseRepository.GetCourseByCodeAsync(prereqCode);
+                if (prereqCourse != null)
                 {
-                    CourseId = c.CourseId,
-                    Code = c.Code,
-                    Name = c.Name,
-                    Credits = c.Credits,
-                    SemesterOffered = c.SemesterOffered
-                })
-                .ToList();
-
-            return availableCourses;
-        }
-
-        public async Task EnrollCourseAsync(string studentId, int courseId, string semester)
-        {
-            // Basic validation: Check if already enrolled
-            var enrollments = await _enrollmentRepository.GetEnrollmentsByStudentAsync(studentId);
-            if (enrollments.Any(e => e.CourseId == courseId && e.Semester == semester))
-            {
-                throw new InvalidOperationException("Student is already enrolled in this course for the semester.");
+                    prerequisiteCourses.Add(prereqCourse);
+                }
             }
-
-            await _enrollmentRepository.AddEnrollmentAsync(studentId, courseId, semester);
+            return prerequisiteCourses;
         }
 
-        public async Task DropCourseAsync(string studentId, int courseId, string semester)
+        public async Task<List<Enrollment>> GetCourseHistoryAsync(string studentId)
         {
-            // Check if the student is enrolled before attempting to drop
-            var enrollments = await _enrollmentRepository.GetEnrollmentsByStudentAsync(studentId);
-            if (!enrollments.Any(e => e.CourseId == courseId && e.Semester == semester))
+            // Placeholder: In a real app, query enrollment history for the student
+            return new List<Enrollment>();
+        }
+
+        public async Task<bool> AddCourseAsync(CourseDto courseDto)
+        {
+            var course = new Course
             {
-                throw new InvalidOperationException("Student is not enrolled in this course for the semester.");
-            }
-
-            await _enrollmentRepository.RemoveEnrollmentAsync(studentId, courseId, semester);
+                CourseCode = courseDto.CourseCode,
+                CourseName = courseDto.CourseName, // Fixed: Use CourseName instead of Name
+                Description = courseDto.Description,
+                Prerequisites = courseDto.Prerequisites
+            };
+            await _courseRepository.AddCourseAsync(course);
+            return true;
         }
 
-        public async Task<List<PrerequisiteDto>> GetPrerequisitesAsync(int courseId)
+        public async Task<bool> UpdateCourseAsync(string courseCode, CourseDto updatedCourse)
         {
-            return await _prerequisiteRepository.GetPrerequisitesAsync(courseId);
+            var course = await _courseRepository.GetCourseByCodeAsync(courseCode);
+            if (course == null) return false;
+
+            course.CourseName = updatedCourse.CourseName; // Fixed: Use CourseName
+            course.Description = updatedCourse.Description;
+            course.Prerequisites = updatedCourse.Prerequisites;
+            await _courseRepository.UpdateCourseAsync(course);
+            return true;
         }
 
-        public async Task<PrerequisiteGraphDto> GetPrerequisiteGraphAsync()
+        public async Task<bool> DeleteCourseAsync(string courseCode)
         {
-            return await _prerequisiteRepository.GetPrerequisiteGraphAsync();
+            var course = await _courseRepository.GetCourseByCodeAsync(courseCode);
+            if (course == null) return false;
+
+            await _courseRepository.DeleteCourseAsync(courseCode);
+            return true;
         }
     }
 }

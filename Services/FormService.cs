@@ -1,9 +1,6 @@
 ﻿using ENROLLMENTSYSTEMBACKEND.DTOs;
 using ENROLLMENTSYSTEMBACKEND.Models;
 using ENROLLMENTSYSTEMBACKEND.Repositories;
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 
 namespace ENROLLMENTSYSTEMBACKEND.Services
 {
@@ -16,22 +13,94 @@ namespace ENROLLMENTSYSTEMBACKEND.Services
             _formRepository = formRepository;
         }
 
-        public async Task SubmitFormAsync(string formType, FormSubmissionDto formData)
+        public async Task<List<FormSubmissionDto>> GetFormsAsync(string? studentId, string? formType)
         {
-            var submission = new FormSubmission
+            var forms = await _formRepository.GetFormsAsync(studentId, formType);
+            return forms.Select(f => new FormSubmissionDto
             {
-                StudentId = formData.StudentId,
-                FormType = formType,
-                Data = Newtonsoft.Json.JsonConvert.SerializeObject(formData),
-                SubmissionDate = DateTime.UtcNow
-            };
-            await _formRepository.AddSubmissionAsync(submission);
+                SubmissionId = f.SubmissionId,
+                StudentId = f.StudentId,
+                FormType = f.FormType,
+                Status = f.Status,
+                SubmissionDate = f.SubmissionDate
+            }).ToList();
         }
 
-        public async Task<List<FormSubmissionDto>> GetFormSubmissionsAsync(string formType)
+        public async Task<List<FormSubmission>> GetFormsAsync(string studentId)
         {
-            var submissions = await _formRepository.GetSubmissionsByTypeAsync(formType);
-            return submissions.Select(s => Newtonsoft.Json.JsonConvert.DeserializeObject<FormSubmissionDto>(s.Data)).ToList();
+            return await _formRepository.GetFormsByStudentIdAsync(studentId);
+        }
+
+        public async Task<FormSubmissionDto> GetFormByIdAsync(string formId)
+        {
+            var form = await _formRepository.GetFormByIdAsync(formId);
+            if (form == null)
+            {
+                return null;
+            }
+            return new FormSubmissionDto
+            {
+                SubmissionId = form.SubmissionId,
+                StudentId = form.StudentId,
+                FormType = form.FormType,
+                Status = form.Status,
+                SubmissionDate = form.SubmissionDate
+            };
+        }
+
+        public async Task<FormSubmissionDto> CreateFormAsync(CreateFormDto createFormDto)
+        {
+            var form = new FormSubmission
+            {
+                StudentId = createFormDto.StudentId,
+                FormType = createFormDto.FormType,
+                Status = "Pending"
+            };
+            var createdForm = await _formRepository.CreateFormAsync(form);
+            return new FormSubmissionDto
+            {
+                SubmissionId = createdForm.SubmissionId,
+                StudentId = createdForm.StudentId,
+                FormType = createdForm.FormType,
+                Status = createdForm.Status,
+                SubmissionDate = createdForm.SubmissionDate
+            };
+        }
+
+        public async Task<FormSubmission> SubmitFormAsync(FormSubmissionDto formDto)
+        {
+            if (string.IsNullOrEmpty(formDto.StudentId) || string.IsNullOrEmpty(formDto.FormType))
+            {
+                throw new InvalidOperationException("Invalid form data.");
+            }
+
+            var form = new FormSubmission
+            {
+                StudentId = formDto.StudentId,
+                FormType = formDto.FormType
+            };
+
+            await _formRepository.AddFormAsync(form);
+            return form;
+        }
+
+        public async Task<FormSubmissionDto> UpdateFormStatusAsync(UpdateStatusDto updateStatusDto)
+        {
+            var form = await _formRepository.GetFormByIdAsync(updateStatusDto.SubmissionId);
+            if (form == null)
+            {
+                return null;
+            }
+            await _formRepository.UpdateFormStatusAsync(updateStatusDto.SubmissionId, updateStatusDto.Status);
+            form.Status = updateStatusDto.Status;
+            return new FormSubmissionDto
+            {
+                SubmissionId = form.SubmissionId,
+                StudentId = form.StudentId,
+                FormType = form.FormType,
+                Status = form.Status,
+                SubmissionDate = form.SubmissionDate
+            };
         }
     }
 }

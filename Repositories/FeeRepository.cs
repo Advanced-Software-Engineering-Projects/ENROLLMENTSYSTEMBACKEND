@@ -1,28 +1,29 @@
-﻿using Microsoft.EntityFrameworkCore;
-using ENROLLMENTSYSTEMBACKEND.Models;
-using ENROLLMENTSYSTEMBACKEND.Data;
+﻿using ENROLLMENTSYSTEMBACKEND.Models;
 
 namespace ENROLLMENTSYSTEMBACKEND.Repositories
 {
     public class FeeRepository : IFeeRepository
     {
-        private readonly FinancialAndAdminDbContext _context;
+        private readonly List<Fee> _fees = new List<Fee>();
 
-        public FeeRepository(FinancialAndAdminDbContext context)
+        public async Task<List<Fee>> GetFeesByStudentIdAsync(string studentId)
         {
-            _context = context;
+            return await Task.FromResult(_fees.Where(f => f.StudentId == studentId).ToList());
         }
 
-        public async Task<List<Fee>> GetByStudentIdAsync(string studentId)
+        public async Task<Fee> GetFeeByIdAsync(string feeId)
         {
-            return await _context.Fees
-                .Where(f => f.StudentId == studentId)
-                .ToListAsync();
+            return await Task.FromResult(_fees.FirstOrDefault(f => f.Id == feeId));
         }
 
-        public async Task<List<Fee>> GetAllAsync()
+        public async Task UpdateFeeAsync(Fee fee)
         {
-            return await _context.Fees.ToListAsync();
+            var existingFee = _fees.FirstOrDefault(f => f.Id == fee.Id);
+            if (existingFee != null)
+            {
+                existingFee.IsPaid = fee.IsPaid;
+            }
+            await Task.CompletedTask;
         }
     }
 }

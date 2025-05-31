@@ -1,10 +1,10 @@
-﻿using ENROLLMENTSYSTEMBACKEND.DTOs;
+﻿using ENROLLMENTSYSTEMBACKEND.Models;
 
 namespace ENROLLMENTSYSTEMBACKEND.Services
 {
     public interface IAuthService
     {
-        Task<UserDto> LoginAsync(LoginDto loginDto);
-        Task<UserDto> RefreshTokenAsync(string refreshToken);
+        Task<User> AuthenticateAsync(string email, string password);
+        Task<string> ResetPasswordAsync(string token, string newPassword);
     }
 }

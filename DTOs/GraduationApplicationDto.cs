@@ -2,9 +2,9 @@
 {
     public class GraduationApplicationDto
     {
+        public string ApplicationId { get; set; }
         public string StudentId { get; set; }
-        public string ProgramCode { get; set; }
-        public string ExpectedGraduationDate { get; set; }
-        public string EmailStatus { get; set; }
+        public DateTime ApplicationDate { get; set; }
+        public string Status { get; set; }
     }
 }
