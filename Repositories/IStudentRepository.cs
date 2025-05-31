@@ -1,14 +1,15 @@
 ﻿using ENROLLMENTSYSTEMBACKEND.Models;
 
-namespace StudentSystemBackend.Repositories
+namespace ENROLLMENTSYSTEMBACKEND.Repositories
 {
     public interface IStudentRepository
     {
-        Task<Student> GetByIdAsync(string id);
-        Task<Student> GetByEmailAsync(string email);
-        Task<Student> GetByRefreshTokenAsync(string refreshToken);
-        Task<List<Enrollment>> GetEnrollmentsByStudentIdAsync(string studentId);
-        Task<List<Student>> GetAllAsync();
-        Task UpdateAsync(Student student);
+        Task<Student> GetStudentByIdAsync(string studentId);
+        Task<List<Student>> GetStudentsAsync();
+        Task<List<Student>> GetAllStudentsAsync();
+        Task<int> GetRegisteredStudentsCountAsync();
+        Task<List<Student>> GetAllStudentsAsync(int page, int pageSize);
+        Task<int> GetTotalStudentsCountAsync();
+        Task UpdateStudentAsync(Student student);
     }
 }

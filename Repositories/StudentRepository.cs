@@ -1,55 +1,52 @@
 ﻿using ENROLLMENTSYSTEMBACKEND.Models;
-using Microsoft.EntityFrameworkCore;
-using StudentSystemBackend.Repositories;
 
 namespace ENROLLMENTSYSTEMBACKEND.Repositories
 {
     public class StudentRepository : IStudentRepository
     {
-        private readonly StudentInformationDbContext _context;
+        private readonly List<Student> _students = new List<Student>(); 
 
-        public StudentRepository(StudentInformationDbContext context)
+        public async Task<List<Student>> GetStudentsAsync()
         {
-            _context = context;
+            return await Task.FromResult(_students);
         }
 
-        public async Task<Student> GetByIdAsync(string id)
+        public async Task<Student> GetStudentByIdAsync(string id)
         {
-            return await _context.Students
-                .Include(s => s.Enrollments)
-                .ThenInclude(e => e.Course)
-                .FirstOrDefaultAsync(s => s.StudentId == id);
+            return await Task.FromResult(_students.FirstOrDefault(s => s.StudentId == id));
         }
 
-        public async Task<Student> GetByEmailAsync(string email)
+        public async Task UpdateStudentAsync(Student student)
         {
-            return await _context.Students
-                .FirstOrDefaultAsync(s => s.Email == email);
+            var existingStudent = _students.FirstOrDefault(s => s.StudentId == student.StudentId);
+            if (existingStudent != null)
+            {
+                existingStudent.Name = student.Name;
+                existingStudent.Email = student.Email;
+                existingStudent.AvatarUrl = student.AvatarUrl;
+            }
+            await Task.CompletedTask;
         }
 
-        public async Task<Student> GetByRefreshTokenAsync(string refreshToken)
+        public async Task<List<Student>> GetAllStudentsAsync()
         {
-            return await _context.Students
-                .FirstOrDefaultAsync(s => s.RefreshToken == refreshToken);
+            return await Task.FromResult(_students);
         }
 
-        public async Task<List<Enrollment>> GetEnrollmentsByStudentIdAsync(string studentId)
+        public async Task<int> GetRegisteredStudentsCountAsync()
         {
-            return await _context.Enrollments
-                .Include(e => e.Course)
-                .Where(e => e.StudentId == studentId)
-                .ToListAsync();
+            return await Task.FromResult(_students.Count);
         }
 
-        public async Task<List<Student>> GetAllAsync()
+        public async Task<List<Student>> GetAllStudentsAsync(int page, int pageSize)
         {
-            return await _context.Students.ToListAsync();
+            var skip = (page - 1) * pageSize;
+            return await Task.FromResult(_students.Skip(skip).Take(pageSize).ToList());
         }
 
-        public async Task UpdateAsync(Student student)
+        public async Task<int> GetTotalStudentsCountAsync()
         {
-            _context.Students.Update(student);
-            await _context.SaveChangesAsync();
+            return await Task.FromResult(_students.Count);
         }
     }
 }

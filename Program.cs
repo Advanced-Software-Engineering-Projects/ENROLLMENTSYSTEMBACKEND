@@ -1,23 +1,24 @@
 using ENROLLMENTSYSTEMBACKEND.Data;
-using ENROLLMENTSYSTEMBACKEND.Models;
 using ENROLLMENTSYSTEMBACKEND.Repositories;
 using ENROLLMENTSYSTEMBACKEND.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using StudentSystemBackend.Repositories;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container
-builder.Services.AddControllers(options =>
+builder.Services.AddControllers();
+builder.Services.AddDistributedMemoryCache(); 
+builder.Services.AddSession(options =>
 {
-    options.Filters.Add(new ValidateModelAttribute());
+    options.IdleTimeout = TimeSpan.FromMinutes(15); // Session expires after 15 minutes of inactivity
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
 });
 
 // Register Swagger services with enhanced configuration
@@ -62,35 +63,75 @@ builder.Services.AddSwaggerGen(options =>
 });
 
 // Register DbContexts for the three databases
-builder.Services.AddDbContext<StudentInformationDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("StudentInformationConnection")));
-builder.Services.AddDbContext<CourseManagementDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("CourseManagementConnection")));
-builder.Services.AddDbContext<FinancialAndAdminDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("FinancialAndAdminConnection")));
+builder.Services.AddDbContext<EnrollmentInfromation>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// Dependency Injection for Repositories
+// Dependency Injection for Repositories and Services
 builder.Services.AddScoped<IStudentRepository, StudentRepository>();
 builder.Services.AddScoped<IEnrollmentRepository, EnrollmentRepository>();
-builder.Services.AddScoped<IProgramRepository, ProgramRepository>();
-//builder.Services.AddScoped<IProgramVersionRepository, ProgramVersionRepository>();
 builder.Services.AddScoped<ICourseRepository, CourseRepository>();
-//builder.Services.AddScoped<IProgramCoursesRepository, ProgramCoursesRepository>();
-builder.Services.AddScoped<IPrerequisiteRepository, PrerequisiteRepository>();
-builder.Services.AddScoped<IAdminRepository, AdminRepository>();
-builder.Services.AddScoped<IFeeRepository, FeeRepository>();
-builder.Services.AddScoped<ISystemConfigRepository, SystemConfigRepository>();
-builder.Services.AddScoped<IUserActivityRepository, UserActivityRepository>();
-
-// Dependency Injection for Services
+builder.Services.AddScoped<IGradeService, GradeService>();
+builder.Services.AddScoped<IRegistrationPeriodRepository, RegistrationPeriodRepository>();
+builder.Services.AddScoped<IEnrollmentRepository, EnrollmentRepository>();
+builder.Services.AddScoped<ICourseRepository, CourseRepository>();
+builder.Services.AddScoped<IStudentRepository, StudentRepository>();
+builder.Services.AddScoped<IRegistrationPeriodService, RegistrationPeriodService>();
+builder.Services.AddScoped<IFormRepository, FormRepository>();
+builder.Services.AddScoped<IGradeRepository, GradeRepository>();
+builder.Services.AddScoped<IFormService, FormService>();
+builder.Services.AddScoped<IGradeService, GradeService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<IStudentRepository, StudentRepository>();
+builder.Services.AddScoped<IHoldRepository, HoldRepository>();
 builder.Services.AddScoped<IStudentService, StudentService>();
-builder.Services.AddScoped<IAdminService, AdminService>();
-builder.Services.AddScoped<ISystemConfigService, SystemConfigService>();
-builder.Services.AddScoped<IUserActivityService, UserActivityService>();
+builder.Services.AddScoped<IHoldService, HoldService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<ICourseRepository, CourseRepository>();
+builder.Services.AddScoped<IStudentRepository, StudentRepository>();
+builder.Services.AddScoped<IEnrollmentRepository, EnrollmentRepository>();
+builder.Services.AddScoped<ICourseService, CourseService>();
+builder.Services.AddScoped<ICourseRepository, CourseRepository>();
+builder.Services.AddScoped<ICourseService, CourseService>();
+builder.Services.AddScoped<ICourseRepository, CourseRepository>();
+builder.Services.AddScoped<IStudentRepository, StudentRepository>();
+builder.Services.AddScoped<IEnrollmentRepository, EnrollmentRepository>();
+builder.Services.AddScoped<IPendingRequestRepository, PendingRequestRepository>();
+builder.Services.AddScoped<IDashboardService, DashboardService>();
+builder.Services.AddScoped<ICourseRepository, CourseRepository>();
+builder.Services.AddScoped<IStudentRepository, StudentRepository>();
+builder.Services.AddScoped<IEnrollmentRepository, EnrollmentRepository>();
+builder.Services.AddScoped<IPrerequisiteRepository, PrerequisiteRepository>();
+builder.Services.AddScoped<IEnrollmentService, EnrollmentService>();
+builder.Services.AddScoped<IFeeRepository, FeeRepository>();
+builder.Services.AddScoped<IPaymentRecordRepository, PaymentRecordRepository>();
+builder.Services.AddScoped<IFeeHoldRepository, FeeHoldRepository>();
+builder.Services.AddScoped<IFeeService, FeeService>();
+builder.Services.AddScoped<IFormRepository, FormRepository>();
+builder.Services.AddScoped<IFormService, FormService>();
+builder.Services.AddScoped<IStudentRepository, StudentRepository>();
+builder.Services.AddScoped<IEnrollmentRepository, EnrollmentRepository>();
+builder.Services.AddScoped<IGradeService, GradeService>();
+builder.Services.AddScoped<IStudentRepository, StudentRepository>();
+builder.Services.AddScoped<IProgramRepository, ProgramRepository>();
+builder.Services.AddScoped<ICourseRepository, CourseRepository>();
+builder.Services.AddScoped<IEnrollmentRepository, EnrollmentRepository>();
+builder.Services.AddScoped<IProgramService, ProgramService>();
+builder.Services.AddScoped<IStudentRepository, StudentRepository>();
+builder.Services.AddScoped<IStudentService, StudentService>();
+builder.Services.AddScoped<IStudentRepository, StudentRepository>();
+builder.Services.AddScoped<IStudentService, StudentService>();
+builder.Services.AddScoped<ITimetableRepository, TimetableRepository>();
+builder.Services.AddScoped<ITimetableService, TimetableService>();
 
-// Add Password Hashers for Student and Admin
-builder.Services.AddSingleton<IPasswordHasher<Student>, PasswordHasher<Student>>();
-builder.Services.AddSingleton<IPasswordHasher<Admin>, PasswordHasher<Admin>>();
+
+
+// Add authorization
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("Student", policy => policy.RequireRole("Student"));
+    options.AddPolicy("Admin", policy => policy.RequireRole("Admin"));
+});
 
 // Add CORS policy
 builder.Services.AddCors(options =>
@@ -98,7 +139,7 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowSpecificOrigins",
         builder =>
         {
-            builder.WithOrigins("http://localhost:5173", "http://192.168.208.42:5064", "http://192.168.114.227:5173")
+            builder.WithOrigins("https://localhost:5230", "http://localhost:5173", "http://192.168.208.42:5064", "http://192.168.114.227:5173")
                    .AllowAnyHeader()
                    .AllowAnyMethod()
                    .AllowCredentials();
@@ -115,19 +156,16 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateAudience = true,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            ValidIssuer = builder.Configuration["Jwt:Issuer"],
-            ValidAudience = builder.Configuration["Jwt:Audience"],
-            IssuerSigningKey = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"])),
-            ClockSkew = TimeSpan.Zero // Remove default clock skew for precise token expiration
+            ValidIssuer = "USPEnrollmentSystem",
+            ValidAudience = "USPStudentsAndAdmins",
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("YourSecretKeyWithAtLeast32Characters"))
         };
     });
 
 // Add Authorization Policies
 builder.Services.AddAuthorization(options =>
 {
-    options.AddPolicy("StudentOnly", policy => policy.RequireClaim(System.Security.Claims.ClaimTypes.Role, "STUDENT"));
-    options.AddPolicy("AdminOnly", policy => policy.RequireClaim(System.Security.Claims.ClaimTypes.Role, "ADMIN", "SAS_MANAGER"));
+    options.AddPolicy("Student", policy => policy.RequireRole("Student"));
 });
 
 // Add enhanced logging
@@ -146,21 +184,19 @@ builder.Services.AddResponseCaching();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
-
+app.UseSwagger();
 app.UseCors("AllowSpecificOrigins");
-app.UseStaticFiles(); // If serving a frontend
+app.UseSwaggerUI();
+app.UseHttpsRedirection();
+app.UseStaticFiles();
 app.UseRouting();
-app.UseAuthentication();
+app.UseSession(); // Enable session if still needed for other features
+app.UseAuthentication(); // Must come before UseAuthorization
 app.UseAuthorization();
 app.UseResponseCaching();
 app.MapControllers();
-app.MapHealthChecks("/health"); // Health check endpoint
-app.MapFallbackToFile("index.html"); // For SPA frontend
+app.MapHealthChecks("/health");
+app.MapFallbackToFile("index.html");
 
 app.Run();
 

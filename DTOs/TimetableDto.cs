@@ -2,12 +2,11 @@
 {
     public class TimetableDto
     {
-        public string Course { get; set; }
-        public string CourseName { get; set; }
-        public string Schedule { get; set; }
-        public string Venue { get; set; }
-        public string Date { get; set; }
-        public string Day { get; set; }
-        public string Activity { get; set; }
+        public string StudentId { get; set; }
+        public string CourseCode { get; set; }
+        public string Semester { get; set; }
+        public string Date { get; set; } // YYYY-MM-DD
+        public string StartTime { get; set; } // HH:MM
+        public string EndTime { get; set; } // HH:MM
     }
 }

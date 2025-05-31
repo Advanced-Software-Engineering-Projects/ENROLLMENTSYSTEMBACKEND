@@ -1,42 +1,96 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Cors.Infrastructure;
-using Microsoft.AspNetCore.Mvc;
+﻿using ENROLLMENTSYSTEMBACKEND.DTOs;
 using ENROLLMENTSYSTEMBACKEND.Services;
-using System.Security.Claims;
-using ENROLLMENTSYSTEMBACKEND.DTOs;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using System.Threading.Tasks;
 
-[ApiController]
-[Route("api/forms")]
-public class FormsController : ControllerBase
+namespace ENROLLMENTSYSTEMBACKEND.Controllers
 {
-    private readonly IFormService _formService;
-
-    public FormsController(IFormService formService)
+    [Authorize(Roles = "Student")]
+    [ApiController]
+    [Route("api/forms")]
+    public class FormsController : ControllerBase
     {
-        _formService = formService;
-    }
+        private readonly IFormService _formService;
 
-    [HttpPost("{formType}")]
-    [Authorize]
-    public async Task<IActionResult> SubmitForm(string formType, [FromBody] FormSubmissionDto formData)
-    {
-        if (!CanAccessStudentData(formData.StudentId)) return Forbid();
-        await _formService.SubmitFormAsync(formType, formData);
-        return Ok(new { message = "Form submitted successfully" });
-    }
+        public FormsController(IFormService formService)
+        {
+            _formService = formService;
+        }
 
-    [HttpGet("admin/forms/{formType}")]
-    [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> GetFormSubmissions(string formType)
-    {
-        var submissions = await _formService.GetFormSubmissionsAsync(formType);
-        return Ok(submissions);
-    }
+        //Gets all form submissions for a student with optional filtering by form type.
+        [HttpGet]
+        public async Task<ActionResult<List<FormSubmissionDto>>> GetForms(string? studentId, string? formType)
+        {
+            var forms = await _formService.GetFormsAsync(studentId, formType);
+            return Ok(forms);
+        }
 
-    private bool CanAccessStudentData(string studentId)
-    {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        var role = User.FindFirstValue(ClaimTypes.Role);
-        return userId == studentId || role == "Admin";
+
+        //Gets all form submissions for a student.
+        [HttpGet("all")]
+        public async Task<IActionResult> GetForms([FromQuery] string studentId)
+        {
+            if (string.IsNullOrEmpty(studentId))
+            {
+                return BadRequest("Student ID is required.");
+            }
+
+            try
+            {
+                var forms = await _formService.GetFormsAsync(studentId);
+                return Ok(forms);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return NotFound(ex.Message); // e.g., "No forms found"
+            }
+        }
+
+       
+        //Submits a form (Reconsideration or Compassionate/Aegrotat).
+        [HttpPost]
+        public async Task<IActionResult> SubmitForm([FromForm] FormSubmissionDto formDto)
+        {
+            if (formDto == null || string.IsNullOrEmpty(formDto.FormType) || string.IsNullOrEmpty(formDto.StudentId))
+            {
+                return BadRequest("Form type and student ID are required.");
+            }
+
+            try
+            {
+                var submittedForm = await _formService.SubmitFormAsync(formDto);
+                return CreatedAtAction(nameof(GetForms), new { studentId = formDto.StudentId }, submittedForm);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message); // e.g., "Invalid form data"
+            }
+        }
+
+        [HttpPost("upload-avatar")]
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> UploadAvatar([FromForm] UploadAvatarRequest request)
+        {
+            var avatar = request.Avatar;
+            if (avatar == null || avatar.Length == 0)
+            {
+                return BadRequest("Avatar file is required.");
+            }
+
+            try
+            {
+                using (var stream = avatar.OpenReadStream())
+                {
+                    await Task.Delay(100); // Simulate async work
+                }
+
+                return Ok("Avatar uploaded successfully.");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
+        }
     }
 }

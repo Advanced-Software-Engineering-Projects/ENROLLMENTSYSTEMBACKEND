@@ -1,50 +1,57 @@
-﻿using Microsoft.EntityFrameworkCore;
-using ENROLLMENTSYSTEMBACKEND.Models;
+﻿using ENROLLMENTSYSTEMBACKEND.Models;
 
 namespace ENROLLMENTSYSTEMBACKEND.Repositories
 {
     public class CourseRepository : ICourseRepository
     {
-        private readonly CourseManagementDbContext _context;
+        private readonly List<Course> _courses = new List<Course>();
 
-        public CourseRepository(CourseManagementDbContext context)
+        public async Task<List<Course>> GetAllCoursesAsync()
         {
-            _context = context;
+            return await Task.FromResult(_courses);
         }
 
-        public async Task<List<Course>> GetAllAsync()
+        public async Task<List<Course>> GetCoursesAsync()
         {
-            return await _context.Courses.ToListAsync();
+            return await Task.FromResult(_courses); 
         }
 
-        public async Task<List<Course>> GetCoursesBySemesterAsync(string semester)
+        public async Task<Course> GetCourseByCodeAsync(string courseCode)
         {
-            return await _context.Courses
-                .Where(c => c.SemesterOffered == semester)
-                .ToListAsync();
+            return await Task.FromResult(_courses.FirstOrDefault(c => c.CourseCode == courseCode));
         }
 
-        public async Task<List<Prerequisite>> GetPrerequisitesAsync(int courseId)
+        public async Task AddCourseAsync(Course course)
         {
-            return await _context.Prerequisites
-                .Where(p => p.CourseId == courseId)
-                .Include(p => p.PrerequisiteCourse)
-                .ToListAsync();
+            _courses.Add(course);
+            await Task.CompletedTask;
         }
 
-        public async Task<List<Prerequisite>> GetAllPrerequisitesAsync()
+        public async Task UpdateCourseAsync(Course course)
         {
-            return await _context.Prerequisites
-                .Include(p => p.Course)
-                .Include(p => p.PrerequisiteCourse)
-                .ToListAsync();
+            var existingCourse = _courses.FirstOrDefault(c => c.CourseCode == course.CourseCode);
+            if (existingCourse != null)
+            {
+                existingCourse.CourseName = course.CourseName;
+                existingCourse.Description = course.Description;
+                existingCourse.Prerequisites = course.Prerequisites;
+            }
+            await Task.CompletedTask;
         }
 
-        public async Task<List<Course>> GetAvailableCoursesAsync(string semester)
+        public async Task<Course> GetCourseByIdAsync(string courseId)
         {
-            return await _context.Courses
-                .Where(c => c.SemesterOffered == semester && c.IsAvailable)
-                .ToListAsync();
+            return await Task.FromResult(_courses.FirstOrDefault(c => c.CourseId == courseId));
+        }
+
+        public async Task DeleteCourseAsync(string courseCode)
+        {
+            var course = _courses.FirstOrDefault(c => c.CourseCode == courseCode);
+            if (course != null)
+            {
+                _courses.Remove(course);
+            }
+            await Task.CompletedTask;
         }
     }
 }
