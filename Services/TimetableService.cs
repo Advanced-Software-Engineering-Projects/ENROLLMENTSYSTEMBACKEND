@@ -1,4 +1,8 @@
-﻿using ENROLLMENTSYSTEMBACKEND.DTOs;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using ENROLLMENTSYSTEMBACKEND.DTOs;
 using ENROLLMENTSYSTEMBACKEND.Models;
 using ENROLLMENTSYSTEMBACKEND.Repositories;
 
@@ -13,18 +17,28 @@ namespace ENROLLMENTSYSTEMBACKEND.Services
             _timetableRepository = timetableRepository;
         }
 
-        public async Task<List<Timetable>> GetTimetablesByStudentIdAsync(string studentId, string semester)
+        public async Task<IEnumerable<TimetableDto>> GetTimetablesByStudentIdAsync(string studentId, string semester)
         {
             var timetables = await _timetableRepository.GetTimetablesByStudentIdAndSemesterAsync(studentId, semester);
-            if (timetables == null || timetables.Count == 0)
+            if (timetables == null || !timetables.Any())
             {
                 throw new InvalidOperationException("No timetable found for student");
             }
-            return timetables;
+
+            return timetables.Select(t => new TimetableDto
+            {
+                StudentId = t.StudentId,
+                CourseCode = t.CourseCode,
+                Semester = t.Semester,
+                Date = t.Date.ToString("yyyy-MM-dd"),
+                StartTime = t.StartTime.ToString(@"hh\:mm"),
+                EndTime = t.EndTime.ToString(@"hh\:mm")
+            });
         }
 
-        public async Task<Timetable> AddTimetableAsync(TimetableDto timetableDto)
+        public async Task<TimetableDto> AddTimetableAsync(TimetableDto timetableDto)
         {
+            // Convert DTO to model
             var timetable = new Timetable
             {
                 StudentId = timetableDto.StudentId,
@@ -35,8 +49,18 @@ namespace ENROLLMENTSYSTEMBACKEND.Services
                 EndTime = TimeSpan.Parse(timetableDto.EndTime)
             };
 
-            await _timetableRepository.AddTimetableAsync(timetable);
-            return timetable;
+            var addedTimetable = await _timetableRepository.AddTimetableAsync(timetable);
+
+            // Convert back to DTO
+            return new TimetableDto
+            {
+                StudentId = addedTimetable.StudentId,
+                CourseCode = addedTimetable.CourseCode,
+                Semester = addedTimetable.Semester,
+                Date = addedTimetable.Date.ToString("yyyy-MM-dd"),
+                StartTime = addedTimetable.StartTime.ToString(@"hh\:mm"),
+                EndTime = addedTimetable.EndTime.ToString(@"hh\:mm")
+            };
         }
     }
 }

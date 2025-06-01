@@ -47,13 +47,15 @@ namespace ENROLLMENTSYSTEMBACKEND.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateStudent(string id, [FromBody] StudentDto studentDto)
         {
-            if (string.IsNullOrEmpty(id) || studentDto == null || id != studentDto.StudentId)
+            if (string.IsNullOrEmpty(id) || studentDto == null)
             {
-                return BadRequest("Student ID mismatch or invalid request.");
+                return BadRequest("Student ID is required.");
             }
 
             try
             {
+                // Use the URL id for update, ignore studentDto.StudentId
+                studentDto.StudentId = id;
                 await _studentService.UpdateStudentAsync(studentDto);
                 return NoContent();
             }

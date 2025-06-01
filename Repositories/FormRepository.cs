@@ -1,14 +1,24 @@
-﻿using ENROLLMENTSYSTEMBACKEND.Models;
+﻿using ENROLLMENTSYSTEMBACKEND.Data;
+using ENROLLMENTSYSTEMBACKEND.Models;
+using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace ENROLLMENTSYSTEMBACKEND.Repositories
 {
     public class FormRepository : IFormRepository
     {
-        private readonly List<FormSubmission> _forms = new List<FormSubmission>();
+        private readonly EnrollmentInfromation _context;
+
+        public FormRepository(EnrollmentInfromation context)
+        {
+            _context = context;
+        }
 
         public async Task<List<FormSubmission>> GetFormsAsync(string? studentId, string? formType)
         {
-            var query = _forms.AsQueryable();
+            var query = _context.FormSubmissions.AsQueryable();
 
             if (!string.IsNullOrEmpty(studentId))
             {
@@ -20,44 +30,49 @@ namespace ENROLLMENTSYSTEMBACKEND.Repositories
                 query = query.Where(f => f.FormType == formType);
             }
 
-            return await Task.FromResult(query.ToList());
+            return await query.ToListAsync();
         }
 
         public async Task<List<FormSubmission>> GetFormsByStudentIdAsync(string studentId)
         {
-            return await Task.FromResult(_forms.Where(f => f.StudentId == studentId).ToList());
+            return await _context.FormSubmissions
+                .Where(f => f.StudentId == studentId)
+                .ToListAsync();
         }
 
         public async Task<FormSubmission> GetFormByIdAsync(string formId)
         {
-            return await Task.FromResult(_forms.FirstOrDefault(f => f.SubmissionId == formId));
+            return await _context.FormSubmissions
+                .FirstOrDefaultAsync(f => f.SubmissionId == formId);
         }
 
         public async Task<FormSubmission> CreateFormAsync(FormSubmission form)
         {
-            form.SubmissionId = Guid.NewGuid().ToString();
-            form.SubmissionDate = DateTime.UtcNow;
-            _forms.Add(form);
-            return await Task.FromResult(form);
+            form.SubmissionId = System.Guid.NewGuid().ToString();
+            form.SubmissionDate = System.DateTime.UtcNow;
+            _context.FormSubmissions.Add(form);
+            await _context.SaveChangesAsync();
+            return form;
         }
 
         public async Task AddFormAsync(FormSubmission form)
         {
-            form.SubmissionId = Guid.NewGuid().ToString();
-            form.SubmissionDate = DateTime.UtcNow;
+            form.SubmissionId = System.Guid.NewGuid().ToString();
+            form.SubmissionDate = System.DateTime.UtcNow;
             form.Status = "Submitted";
-            _forms.Add(form);
-            await Task.CompletedTask;
+            _context.FormSubmissions.Add(form);
+            await _context.SaveChangesAsync();
         }
 
         public async Task UpdateFormStatusAsync(string formId, string status)
         {
-            var form = _forms.FirstOrDefault(f => f.SubmissionId == formId);
+            var form = await _context.FormSubmissions
+                .FirstOrDefaultAsync(f => f.SubmissionId == formId);
             if (form != null)
             {
                 form.Status = status;
+                await _context.SaveChangesAsync();
             }
-            await Task.CompletedTask;
         }
     }
 }

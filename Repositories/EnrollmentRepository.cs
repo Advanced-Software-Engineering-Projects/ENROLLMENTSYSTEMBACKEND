@@ -1,63 +1,69 @@
-﻿using ENROLLMENTSYSTEMBACKEND.Models;
+﻿﻿using ENROLLMENTSYSTEMBACKEND.Models;
+using ENROLLMENTSYSTEMBACKEND.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace ENROLLMENTSYSTEMBACKEND.Repositories
 {
     public class EnrollmentRepository : IEnrollmentRepository
     {
-        private readonly List<Enrollment> _enrollments = new List<Enrollment>();
+        private readonly EnrollmentInfromation _context;
+
+        public EnrollmentRepository(EnrollmentInfromation context)
+        {
+            _context = context;
+        }
 
         public async Task<List<Enrollment>> GetAllEnrollmentsAsync()
         {
-            return await Task.FromResult(_enrollments.ToList());
+            return await _context.Enrollments.ToListAsync();
         }
 
         public async Task<List<Enrollment>> GetEnrollmentsAsync()
         {
-            // Assuming GetEnrollmentsAsync is equivalent to GetAllEnrollmentsAsync
-            return await Task.FromResult(_enrollments.ToList());
+            return await _context.Enrollments.ToListAsync();
         }
 
         public async Task<List<Enrollment>> GetEnrollmentsByStudentIdAsync(string studentId)
         {
-            return await Task.FromResult(_enrollments.Where(e => e.StudentId == studentId).ToList());
+            return await _context.Enrollments.Where(e => e.StudentId == studentId).ToListAsync();
         }
 
         public async Task<List<Enrollment>> GetEnrollmentsByCourseIdAsync(string courseId)
         {
-            return await Task.FromResult(_enrollments.Where(e => e.CourseId == courseId).ToList());
+            return await _context.Enrollments.Where(e => e.CourseId == courseId).ToListAsync();
         }
 
         public async Task<Enrollment> GetEnrollmentByIdAsync(string enrollmentId)
         {
-            return await Task.FromResult(_enrollments.FirstOrDefault(e => e.EnrollmentId == enrollmentId));
+            return await _context.Enrollments.FirstOrDefaultAsync(e => e.EnrollmentId == enrollmentId);
         }
 
         public async Task AddEnrollmentAsync(Enrollment enrollment)
         {
             enrollment.EnrollmentId = Guid.NewGuid().ToString();
-            _enrollments.Add(enrollment);
-            await Task.CompletedTask;
+            _context.Enrollments.Add(enrollment);
+            await _context.SaveChangesAsync();
         }
 
         public async Task UpdateEnrollmentAsync(Enrollment enrollment)
         {
-            var existing = _enrollments.FirstOrDefault(e => e.EnrollmentId == enrollment.EnrollmentId);
+            var existing = await _context.Enrollments.FirstOrDefaultAsync(e => e.EnrollmentId == enrollment.EnrollmentId);
             if (existing != null)
             {
                 existing.Status = enrollment.Status;
                 // Update other properties if needed
+                await _context.SaveChangesAsync();
             }
-            await Task.CompletedTask;
         }
 
         public async Task DeleteEnrollmentAsync(string enrollmentId)
         {
-            var enrollment = _enrollments.FirstOrDefault(e => e.EnrollmentId == enrollmentId);
+            var enrollment = await _context.Enrollments.FirstOrDefaultAsync(e => e.EnrollmentId == enrollmentId);
             if (enrollment != null)
             {
-                _enrollments.Remove(enrollment);
+                _context.Enrollments.Remove(enrollment);
+                await _context.SaveChangesAsync();
             }
-            await Task.CompletedTask;
         }
     }
 }

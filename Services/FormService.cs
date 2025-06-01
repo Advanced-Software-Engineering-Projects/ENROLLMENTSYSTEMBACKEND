@@ -69,15 +69,25 @@ namespace ENROLLMENTSYSTEMBACKEND.Services
 
         public async Task<FormSubmission> SubmitFormAsync(FormSubmissionDto formDto)
         {
-            if (string.IsNullOrEmpty(formDto.StudentId) || string.IsNullOrEmpty(formDto.FormType))
+            if (formDto == null)
             {
-                throw new InvalidOperationException("Invalid form data.");
+                throw new InvalidOperationException("Form data is required.");
+            }
+            if (string.IsNullOrEmpty(formDto.StudentId))
+            {
+                throw new InvalidOperationException("Student ID is required.");
+            }
+            if (string.IsNullOrEmpty(formDto.FormType))
+            {
+                throw new InvalidOperationException("Form type is required.");
             }
 
             var form = new FormSubmission
             {
                 StudentId = formDto.StudentId,
-                FormType = formDto.FormType
+                FormType = formDto.FormType,
+                Status = "Submitted",
+                SubmissionDate = DateTime.UtcNow
             };
 
             await _formRepository.AddFormAsync(form);

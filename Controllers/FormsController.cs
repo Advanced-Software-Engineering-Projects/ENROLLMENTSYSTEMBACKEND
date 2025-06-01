@@ -52,9 +52,17 @@ namespace ENROLLMENTSYSTEMBACKEND.Controllers
         [HttpPost]
         public async Task<IActionResult> SubmitForm([FromForm] FormSubmissionDto formDto)
         {
-            if (formDto == null || string.IsNullOrEmpty(formDto.FormType) || string.IsNullOrEmpty(formDto.StudentId))
+            if (formDto == null)
             {
-                return BadRequest("Form type and student ID are required.");
+                return BadRequest("Form data is required.");
+            }
+            if (string.IsNullOrEmpty(formDto.StudentId))
+            {
+                return BadRequest("Student ID is required.");
+            }
+            if (string.IsNullOrEmpty(formDto.FormType))
+            {
+                return BadRequest("Form type is required.");
             }
 
             try

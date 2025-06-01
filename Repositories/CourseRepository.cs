@@ -1,57 +1,64 @@
 ﻿using ENROLLMENTSYSTEMBACKEND.Models;
+using ENROLLMENTSYSTEMBACKEND.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace ENROLLMENTSYSTEMBACKEND.Repositories
 {
     public class CourseRepository : ICourseRepository
     {
-        private readonly List<Course> _courses = new List<Course>();
+        private readonly EnrollmentInfromation _context;
+
+        public CourseRepository(EnrollmentInfromation context)
+        {
+            _context = context;
+        }
 
         public async Task<List<Course>> GetAllCoursesAsync()
         {
-            return await Task.FromResult(_courses);
+            return await _context.Courses.ToListAsync();
         }
 
         public async Task<List<Course>> GetCoursesAsync()
         {
-            return await Task.FromResult(_courses); 
+            return await _context.Courses.ToListAsync();
         }
 
         public async Task<Course> GetCourseByCodeAsync(string courseCode)
         {
-            return await Task.FromResult(_courses.FirstOrDefault(c => c.CourseCode == courseCode));
+            return await _context.Courses.FirstOrDefaultAsync(c => c.CourseCode == courseCode);
         }
 
         public async Task AddCourseAsync(Course course)
         {
-            _courses.Add(course);
-            await Task.CompletedTask;
+            _context.Courses.Add(course);
+            await _context.SaveChangesAsync();
         }
 
         public async Task UpdateCourseAsync(Course course)
         {
-            var existingCourse = _courses.FirstOrDefault(c => c.CourseCode == course.CourseCode);
+            var existingCourse = await _context.Courses.FirstOrDefaultAsync(c => c.CourseCode == course.CourseCode);
             if (existingCourse != null)
             {
                 existingCourse.CourseName = course.CourseName;
                 existingCourse.Description = course.Description;
                 existingCourse.Prerequisites = course.Prerequisites;
+                await _context.SaveChangesAsync();
             }
-            await Task.CompletedTask;
         }
 
         public async Task<Course> GetCourseByIdAsync(string courseId)
         {
-            return await Task.FromResult(_courses.FirstOrDefault(c => c.CourseId == courseId));
+            return await _context.Courses.FirstOrDefaultAsync(c => c.CourseId == courseId);
         }
 
         public async Task DeleteCourseAsync(string courseCode)
         {
-            var course = _courses.FirstOrDefault(c => c.CourseCode == courseCode);
+            var course = await _context.Courses.FirstOrDefaultAsync(c => c.CourseCode == courseCode);
             if (course != null)
             {
-                _courses.Remove(course);
+                _context.Courses.Remove(course);
+                await _context.SaveChangesAsync();
             }
-            await Task.CompletedTask;
         }
     }
 }

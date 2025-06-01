@@ -1,10 +1,12 @@
-﻿using ENROLLMENTSYSTEMBACKEND.Models;
+﻿using System.Collections.Generic;
+using System.Threading.Tasks;
+using ENROLLMENTSYSTEMBACKEND.Models;
 
 namespace ENROLLMENTSYSTEMBACKEND.Repositories
 {
     public interface ITimetableRepository
     {
-        Task<List<Timetable>> GetTimetablesByStudentIdAndSemesterAsync(string studentId, string semester);
-        Task AddTimetableAsync(Timetable timetable);
+        Task<IEnumerable<Timetable>> GetTimetablesByStudentIdAndSemesterAsync(string studentId, string semester);
+        Task<Timetable> AddTimetableAsync(Timetable timetable);
     }
 }

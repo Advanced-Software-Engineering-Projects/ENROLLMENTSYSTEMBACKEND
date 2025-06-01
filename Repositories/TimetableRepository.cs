@@ -1,21 +1,33 @@
-﻿using ENROLLMENTSYSTEMBACKEND.Models;
+﻿using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using ENROLLMENTSYSTEMBACKEND.Data;
+using ENROLLMENTSYSTEMBACKEND.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace ENROLLMENTSYSTEMBACKEND.Repositories
 {
     public class TimetableRepository : ITimetableRepository
     {
-        private readonly List<Timetable> _timetables = new List<Timetable>();
+        private readonly EnrollmentInfromation _context;
 
-        public async Task<List<Timetable>> GetTimetablesByStudentIdAndSemesterAsync(string studentId, string semester)
+        public TimetableRepository(EnrollmentInfromation context)
         {
-            return await Task.FromResult(_timetables.Where(t => t.StudentId == studentId && t.Semester == semester).ToList());
+            _context = context;
         }
 
-        public async Task AddTimetableAsync(Timetable timetable)
+        public async Task<IEnumerable<Timetable>> GetTimetablesByStudentIdAndSemesterAsync(string studentId, string semester)
         {
-            timetable.Id = Guid.NewGuid().ToString();
-            _timetables.Add(timetable);
-            await Task.CompletedTask;
+            return await _context.Timetables
+                .Where(t => t.StudentId == studentId && t.Semester == semester)
+                .ToListAsync();
+        }
+
+        public async Task<Timetable> AddTimetableAsync(Timetable timetable)
+        {
+            _context.Timetables.Add(timetable);
+            await _context.SaveChangesAsync();
+            return timetable;
         }
     }
 }
