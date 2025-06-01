@@ -1,16 +1,21 @@
 ﻿using ENROLLMENTSYSTEMBACKEND.DTOs;
 using ENROLLMENTSYSTEMBACKEND.Models;
 using ENROLLMENTSYSTEMBACKEND.Repositories;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Collections.Generic;
 
 namespace ENROLLMENTSYSTEMBACKEND.Services
 {
     public class CourseService : ICourseService
     {
         private readonly ICourseRepository _courseRepository;
+        private readonly IEnrollmentRepository _enrollmentRepository;
 
-        public CourseService(ICourseRepository courseRepository)
+        public CourseService(ICourseRepository courseRepository, IEnrollmentRepository enrollmentRepository)
         {
             _courseRepository = courseRepository;
+            _enrollmentRepository = enrollmentRepository;
         }
 
         public async Task<List<Course>> GetAvailableCoursesAsync(string studentId)
@@ -42,7 +47,22 @@ namespace ENROLLMENTSYSTEMBACKEND.Services
 
         public async Task<List<Course>> GetRegisteredCoursesAsync(string studentId)
         {
-            return new List<Course>();
+            var enrollments = await _enrollmentRepository.GetEnrollmentsByStudentIdAsync(studentId);
+            if (enrollments == null || enrollments.Count == 0)
+            {
+                return new List<Course>();
+            }
+
+            var courses = new List<Course>();
+            foreach (var enrollment in enrollments)
+            {
+                var course = await _courseRepository.GetCourseByIdAsync(enrollment.CourseId);
+                if (course != null)
+                {
+                    courses.Add(course);
+                }
+            }
+            return courses;
         }
 
         public async Task<bool> RegisterCourseAsync(string studentId, string courseCode)
@@ -64,7 +84,6 @@ namespace ENROLLMENTSYSTEMBACKEND.Services
 
         public async Task<bool> DropCourseAsync(string studentId, string courseCode)
         {
-    
             var course = await _courseRepository.GetCourseByCodeAsync(courseCode);
             return course != null;
         }
@@ -105,8 +124,8 @@ namespace ENROLLMENTSYSTEMBACKEND.Services
 
         public async Task<List<Enrollment>> GetCourseHistoryAsync(string studentId)
         {
-            // Placeholder: In a real app, query enrollment history for the student
-            return new List<Enrollment>();
+            var history = await _enrollmentRepository.GetEnrollmentsByStudentIdAsync(studentId);
+            return history ?? new List<Enrollment>();
         }
 
         public async Task<bool> AddCourseAsync(CourseDto courseDto)

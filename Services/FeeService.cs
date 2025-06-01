@@ -1,6 +1,10 @@
 ﻿using ENROLLMENTSYSTEMBACKEND.DTOs;
 using ENROLLMENTSYSTEMBACKEND.Models;
 using ENROLLMENTSYSTEMBACKEND.Repositories;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace ENROLLMENTSYSTEMBACKEND.Services
 {
@@ -17,10 +21,21 @@ namespace ENROLLMENTSYSTEMBACKEND.Services
             _feeHoldRepository = feeHoldRepository;
         }
 
+        private string GetCurrentSemester()
+        {
+            var now = DateTime.UtcNow;
+            int year = now.Year;
+            int month = now.Month;
+
+            // Assuming semesters: Semester 1 = Jan-Jun, Semester 2 = Jul-Dec
+            string semesterPart = month <= 6 ? "Semester 1" : "Semester 2";
+            return $"{semesterPart} {year}";
+        }
+
         public async Task<List<CurrentFeeDto>> GetCurrentFeesByStudentIdAsync(string studentId)
         {
             var fees = await _feeRepository.GetFeesByStudentIdAsync(studentId);
-            var currentSemester = "Spring 2024"; // Placeholder; replace with dynamic logic
+            var currentSemester = GetCurrentSemester();
             var currentFees = fees.Where(f => f.Semester == currentSemester).ToList();
             return currentFees.Select(f => new CurrentFeeDto
             {

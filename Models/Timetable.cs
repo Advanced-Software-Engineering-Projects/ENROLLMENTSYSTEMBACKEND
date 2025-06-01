@@ -1,8 +1,10 @@
-﻿namespace ENROLLMENTSYSTEMBACKEND.Models
+﻿using System;
+
+namespace ENROLLMENTSYSTEMBACKEND.Models
 {
     public class Timetable
     {
-        public string Id { get; set; }
+        public int Id { get; set; }
         public string StudentId { get; set; }
         public string CourseCode { get; set; }
         public string Semester { get; set; }

@@ -1,20 +1,30 @@
 ﻿using ENROLLMENTSYSTEMBACKEND.Models;
+using ENROLLMENTSYSTEMBACKEND.Data;
+using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace ENROLLMENTSYSTEMBACKEND.Repositories
 {
     public class PaymentRecordRepository : IPaymentRecordRepository
     {
-        private readonly List<PaymentRecord> _paymentRecords = new List<PaymentRecord>();
+        private readonly EnrollmentInfromation _context;
+
+        public PaymentRecordRepository(EnrollmentInfromation context)
+        {
+            _context = context;
+        }
 
         public async Task<List<PaymentRecord>> GetPaymentRecordsByStudentIdAsync(string studentId)
         {
-            return await Task.FromResult(_paymentRecords.Where(pr => pr.StudentId == studentId).ToList());
+            return await _context.PaymentRecords.Where(pr => pr.StudentId == studentId).ToListAsync();
         }
 
         public async Task AddPaymentRecordAsync(PaymentRecord paymentRecord)
         {
-            _paymentRecords.Add(paymentRecord);
-            await Task.CompletedTask;
+            _context.PaymentRecords.Add(paymentRecord);
+            await _context.SaveChangesAsync();
         }
     }
 }

@@ -1,11 +1,12 @@
-﻿using ENROLLMENTSYSTEMBACKEND.DTOs;
-using ENROLLMENTSYSTEMBACKEND.Models;
+﻿using System.Collections.Generic;
+using System.Threading.Tasks;
+using ENROLLMENTSYSTEMBACKEND.DTOs;
 
 namespace ENROLLMENTSYSTEMBACKEND.Services
 {
     public interface ITimetableService
     {
-        Task<List<Timetable>> GetTimetablesByStudentIdAsync(string studentId, string semester);
-        Task<Timetable> AddTimetableAsync(TimetableDto timetableDto);
+        Task<IEnumerable<TimetableDto>> GetTimetablesByStudentIdAsync(string studentId, string semester);
+        Task<TimetableDto> AddTimetableAsync(TimetableDto timetableDto);
     }
 }

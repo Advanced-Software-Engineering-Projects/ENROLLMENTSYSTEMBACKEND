@@ -12,11 +12,13 @@ namespace ENROLLMENTSYSTEMBACKEND.Services
     {
         private readonly IStudentRepository _studentRepository;
         private readonly IEnrollmentRepository _enrollmentRepository;
+        private readonly ICourseRepository _courseRepository;
 
-        public GradeService(IStudentRepository studentRepository, IEnrollmentRepository enrollmentRepository)
+        public GradeService(IStudentRepository studentRepository, IEnrollmentRepository enrollmentRepository, ICourseRepository courseRepository)
         {
             _studentRepository = studentRepository;
             _enrollmentRepository = enrollmentRepository;
+            _courseRepository = courseRepository;
         }
 
         public async Task<AcademicRecordsDto> GetAcademicRecordsAsync(string studentId)
@@ -28,11 +30,20 @@ namespace ENROLLMENTSYSTEMBACKEND.Services
             }
 
             var enrollments = await _enrollmentRepository.GetEnrollmentsByStudentIdAsync(studentId);
-            var enrollmentDtos = enrollments.Select(e => new EnrollmentDto
+            var allCourses = await _courseRepository.GetAllCoursesAsync();
+
+            var enrollmentDtos = enrollments.Select(e =>
             {
-                CourseId = e.CourseId,
-                Grade = e.Grade,
-                Semester = e.Semester
+                var course = allCourses.FirstOrDefault(c => c.CourseId == e.CourseId);
+                return new EnrollmentDto
+                {
+                    CourseId = e.CourseId,
+                    CourseCode = course?.CourseCode,
+                    CourseName = course?.CourseName,
+                    StudentId = e.StudentId,
+                    Grade = e.Grade,
+                    Semester = e.Semester
+                };
             }).ToList();
 
             var gpa = CalculateGpa(enrollments);
@@ -49,14 +60,23 @@ namespace ENROLLMENTSYSTEMBACKEND.Services
         public async Task<TranscriptDto> GetTranscriptAsync(string studentId)
         {
             var enrollments = await _enrollmentRepository.GetEnrollmentsByStudentIdAsync(studentId);
+            var allCourses = await _courseRepository.GetAllCoursesAsync();
+
             return new TranscriptDto
             {
                 StudentId = studentId,
-                Enrollments = enrollments.Select(e => new EnrollmentDto
+                Enrollments = enrollments.Select(e =>
                 {
-                    CourseId = e.CourseId,
-                    Grade = e.Grade,
-                    Semester = e.Semester
+                    var course = allCourses.FirstOrDefault(c => c.CourseId == e.CourseId);
+                    return new EnrollmentDto
+                    {
+                        CourseId = e.CourseId,
+                        CourseCode = course?.CourseCode,
+                        CourseName = course?.CourseName,
+                        StudentId = e.StudentId,
+                        Grade = e.Grade,
+                        Semester = e.Semester
+                    };
                 }).ToList()
             };
         }

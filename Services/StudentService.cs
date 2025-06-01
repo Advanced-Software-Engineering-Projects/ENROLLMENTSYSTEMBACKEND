@@ -23,7 +23,22 @@ namespace ENROLLMENTSYSTEMBACKEND.Services
             {
                 StudentId = student.StudentId,
                 Name = student.Name,
-                Email = student.Email
+                FirstName = student.FirstName,
+                MiddleName = student.MiddleName,
+                LastName = student.LastName,
+                Dob = student.Dob,
+                Email = student.Email,
+                Phone = student.Phone,
+                Avatar = student.AvatarUrl,
+                Gender = student.Gender,
+                Citizenship = student.Citizenship,
+                Program = student.Program,
+                StudentLevel = student.StudentLevel,
+                StudentCampus = student.StudentCampus,
+                ExamSite = student.ExamSite,
+                MajorType = student.MajorType,
+                Major1 = student.Major1,
+                Major2 = student.Major2
             };
         }
 
@@ -80,7 +95,22 @@ namespace ENROLLMENTSYSTEMBACKEND.Services
             {
                 StudentId = s.StudentId,
                 Name = s.Name,
-                Email = s.Email
+                FirstName = s.FirstName,
+                MiddleName = s.MiddleName,
+                LastName = s.LastName,
+                Dob = s.Dob,
+                Email = s.Email,
+                Phone = s.Phone,
+                Avatar = s.AvatarUrl,
+                Gender = s.Gender,
+                Citizenship = s.Citizenship,
+                Program = s.Program,
+                StudentLevel = s.StudentLevel,
+                StudentCampus = s.StudentCampus,
+                ExamSite = s.ExamSite,
+                MajorType = s.MajorType,
+                Major1 = s.Major1,
+                Major2 = s.Major2
             }).ToList();
         }
 
