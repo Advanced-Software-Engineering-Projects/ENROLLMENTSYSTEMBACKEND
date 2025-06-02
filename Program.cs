@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using Services;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -128,7 +129,8 @@ builder.Services.AddScoped<ITimetableService, TimetableService>();
 // Register TokenService for token generation
 builder.Services.AddScoped<TokenService>();
 
-
+builder.Services.AddScoped<ExternalFormIntegrationServiceClient>(provider =>
+       new ExternalFormIntegrationServiceClient());
 
 // Add authorization
 builder.Services.AddAuthorization(options =>
@@ -148,6 +150,19 @@ builder.Services.AddCors(options =>
                    .AllowAnyMethod()
                    .AllowCredentials();
         });
+});
+
+builder.Services.AddHttpClient("Service1", client =>
+{
+    client.BaseAddress = new Uri("http://localhost:5001/"); 
+});
+builder.Services.AddHttpClient("Service2", client =>
+{
+    client.BaseAddress = new Uri("http://localhost:5002/"); 
+});
+builder.Services.AddHttpClient("Service3", client =>
+{
+    client.BaseAddress = new Uri("http://localhost:5003/"); 
 });
 
 // Add JWT Authentication with enhanced security
