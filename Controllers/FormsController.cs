@@ -2,6 +2,8 @@
 using ENROLLMENTSYSTEMBACKEND.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Services;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace ENROLLMENTSYSTEMBACKEND.Controllers
@@ -12,10 +14,12 @@ namespace ENROLLMENTSYSTEMBACKEND.Controllers
     public class FormsController : ControllerBase
     {
         private readonly IFormService _formService;
+        private readonly ExternalFormIntegrationServiceClient _externalFormClient;
 
-        public FormsController(IFormService formService)
+        public FormsController(IFormService formService, ExternalFormIntegrationServiceClient externalFormClient)
         {
             _formService = formService;
+            _externalFormClient = externalFormClient;
         }
 
         //Gets all form submissions for a student with optional filtering by form type.
@@ -24,6 +28,32 @@ namespace ENROLLMENTSYSTEMBACKEND.Controllers
         {
             var forms = await _formService.GetFormsAsync(studentId, formType);
             return Ok(forms);
+        }
+
+        // New endpoint to get external forms from microservice
+        [HttpGet("external")]
+        public async Task<IActionResult> GetExternalForms()
+        {
+            var response = await _externalFormClient.GetFormsAsync();
+            if (!response.IsSuccessStatusCode)
+            {
+                return StatusCode((int)response.StatusCode, "Failed to get external forms");
+            }
+            var content = await response.Content.ReadAsStringAsync();
+            return Ok(content);
+        }
+
+        // New endpoint to apply for external form
+        [HttpPost("external/apply")]
+        public async Task<IActionResult> ApplyForExternalForm([FromBody] FormApplicationDto application)
+        {
+            var response = await _externalFormClient.ApplyForFormAsync(application.StudentId, application.FormType);
+            if (!response.IsSuccessStatusCode)
+            {
+                return StatusCode((int)response.StatusCode, "Failed to apply for external form");
+            }
+            var content = await response.Content.ReadAsStringAsync();
+            return Ok(content);
         }
 
 
@@ -95,7 +125,7 @@ namespace ENROLLMENTSYSTEMBACKEND.Controllers
 
                 return Ok("Avatar uploaded successfully.");
             }
-            catch (Exception ex)
+            catch (System.Exception ex)
             {
                 return StatusCode(500, $"Internal server error: {ex.Message}");
             }

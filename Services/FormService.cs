@@ -1,29 +1,33 @@
 ﻿using ENROLLMENTSYSTEMBACKEND.DTOs;
 using ENROLLMENTSYSTEMBACKEND.Models;
 using ENROLLMENTSYSTEMBACKEND.Repositories;
+using Services;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace ENROLLMENTSYSTEMBACKEND.Services
 {
     public class FormService : IFormService
     {
         private readonly IFormRepository _formRepository;
+        private readonly ExternalFormIntegrationServiceClient _externalFormClient;
 
-        public FormService(IFormRepository formRepository)
+        public FormService(IFormRepository formRepository, ExternalFormIntegrationServiceClient externalFormClient)
         {
             _formRepository = formRepository;
+            _externalFormClient = externalFormClient;
         }
 
         public async Task<List<FormSubmissionDto>> GetFormsAsync(string? studentId, string? formType)
         {
-            var forms = await _formRepository.GetFormsAsync(studentId, formType);
-            return forms.Select(f => new FormSubmissionDto
-            {
-                SubmissionId = f.SubmissionId,
-                StudentId = f.StudentId,
-                FormType = f.FormType,
-                Status = f.Status,
-                SubmissionDate = f.SubmissionDate
-            }).ToList();
+            // For simplicity, call external form microservice for all forms
+            var response = await _externalFormClient.GetFormsAsync();
+            response.EnsureSuccessStatusCode();
+            var json = await response.Content.ReadAsStringAsync();
+            var forms = System.Text.Json.JsonSerializer.Deserialize<List<FormSubmissionDto>>(json);
+            return forms;
         }
 
         public async Task<List<FormSubmission>> GetFormsAsync(string studentId)
