@@ -229,7 +229,8 @@ namespace ENROLLMENTSYSTEMBACKEND.Migrations
                 name: "Timetables",
                 columns: table => new
                 {
-                    Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
                     StudentId = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     CourseCode = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Semester = table.Column<string>(type: "nvarchar(max)", nullable: false),
@@ -248,7 +249,8 @@ namespace ENROLLMENTSYSTEMBACKEND.Migrations
                 {
                     Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     Email = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    PasswordHash = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                    PasswordHash = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Role = table.Column<string>(type: "nvarchar(max)", nullable: false)
                 },
                 constraints: table =>
                 {

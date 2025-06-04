@@ -1,4 +1,5 @@
 ﻿using ENROLLMENTSYSTEMBACKEND.DTOs;
+using ENROLLMENTSYSTEMBACKEND.Models;
 using ENROLLMENTSYSTEMBACKEND.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -20,8 +21,7 @@ namespace ENROLLMENTSYSTEMBACKEND.Controllers
             _studentService = studentService;
         }
 
-       
-        //Gets all students for hold management.
+        // Gets all students for hold management.
         [HttpGet("students")]
         public async Task<IActionResult> GetStudents()
         {
@@ -36,7 +36,7 @@ namespace ENROLLMENTSYSTEMBACKEND.Controllers
             }
         }
 
-        //Gets holds for a specific student or all holds if studentId is not provided.
+        // Gets holds for a specific student or all holds if studentId is not provided.
         [HttpGet]
         public async Task<IActionResult> GetHolds([FromQuery] string? studentId)
         {
@@ -51,7 +51,27 @@ namespace ENROLLMENTSYSTEMBACKEND.Controllers
             }
         }
 
-        //Adds a new hold for a student.
+        // Checks if a student has any holds based on their presence in the Holds table.
+        [HttpGet("check/{studentId}")]
+        public async Task<IActionResult> CheckStudentHold(string studentId)
+        {
+            if (string.IsNullOrEmpty(studentId))
+            {
+                return BadRequest("Student ID is required.");
+            }
+
+            try
+            {
+                var hasHolds = await _holdService.HasHoldsAsync(studentId);
+                return Ok(new { StudentId = studentId, HasHolds = hasHolds });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return NotFound(ex.Message); // e.g., "Student not found"
+            }
+        }
+
+        // Adds a new hold for a student.
         [HttpPost]
         public async Task<IActionResult> AddHold([FromBody] HoldDto holdDto)
         {
@@ -63,7 +83,7 @@ namespace ENROLLMENTSYSTEMBACKEND.Controllers
 
             try
             {
-                var addedHold = await _holdService.AddHoldAsync(holdDto);
+                var addedHold = await _holdService.AddHoldAsync(Hold);
                 return CreatedAtAction(nameof(GetHolds), new { studentId = holdDto.StudentId }, addedHold);
             }
             catch (InvalidOperationException ex)
@@ -72,8 +92,7 @@ namespace ENROLLMENTSYSTEMBACKEND.Controllers
             }
         }
 
-        
-        //Removes a hold by its ID.
+        // Removes a hold by its ID.
         [HttpDelete("{id}")]
         public async Task<IActionResult> RemoveHold(string id)
         {

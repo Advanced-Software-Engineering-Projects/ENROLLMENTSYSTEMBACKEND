@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ENROLLMENTSYSTEMBACKEND.Migrations
 {
     [DbContext(typeof(EnrollmentInfromation))]
-    [Migration("20250531082317_UserTableUpdated")]
-    partial class UserTableUpdated
+    [Migration("20250601213626_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -419,8 +419,11 @@ namespace ENROLLMENTSYSTEMBACKEND.Migrations
 
             modelBuilder.Entity("ENROLLMENTSYSTEMBACKEND.Models.Timetable", b =>
                 {
-                    b.Property<string>("Id")
-                        .HasColumnType("nvarchar(450)");
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("CourseCode")
                         .IsRequired()

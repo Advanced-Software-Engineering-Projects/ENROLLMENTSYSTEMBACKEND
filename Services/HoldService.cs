@@ -65,5 +65,11 @@ namespace ENROLLMENTSYSTEMBACKEND.Services
 
             await _holdRepository.RemoveHoldAsync(id);
         }
+
+        public async Task<bool> HasHoldsAsync(string studentId)
+        {
+            var holds = await _holdRepository.GetHoldsAsync(studentId);
+            return holds.Any();
+        }
     }
 }

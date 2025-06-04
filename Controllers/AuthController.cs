@@ -39,7 +39,7 @@ namespace ENROLLMENTSYSTEMBACKEND.Controllers
 
             var token = GenerateJwtToken(user);
             // Optionally keep session for other purposes, but not required for JWT
-            HttpContext.Session.SetString("UserId", user.Id);
+            //HttpContext.Session.SetString("UserId", user.Id);
             _logger.LogInformation("Login successful for email: {Email}, UserId: {UserId}", loginDto.Email, user.Id);
             return Ok(new { Message = "Login successful", Token = token });
         }
@@ -50,7 +50,7 @@ namespace ENROLLMENTSYSTEMBACKEND.Controllers
             {
                 new Claim(JwtRegisteredClaimNames.Sub, user.Id),
                 new Claim(JwtRegisteredClaimNames.Email, user.Email),
-                new Claim(ClaimTypes.Role, user.Role ?? "Student"), // Add role if applicable
+                new Claim(ClaimTypes.Role, user.Role), // Add role if applicable
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             };
 
