@@ -2,6 +2,7 @@
 using ENROLLMENTSYSTEMBACKEND.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Services;
 using System.Threading.Tasks;
 
 namespace ENROLLMENTSYSTEMBACKEND.Controllers
@@ -12,13 +13,14 @@ namespace ENROLLMENTSYSTEMBACKEND.Controllers
     public class StudentsController : ControllerBase
     {
         private readonly IStudentService _studentService;
+        private readonly HoldManagementServiceClient _holdClient;
 
-        public StudentsController(IStudentService studentService)
+        public StudentsController(IStudentService studentService, HoldManagementServiceClient holdClient)
         {
             _studentService = studentService;
+            _holdClient = holdClient;
         }
 
-       
         //Retrieves a student's profile by their ID.
         [HttpGet("{id}")]
         public async Task<IActionResult> GetStudent(string id)
@@ -105,6 +107,24 @@ namespace ENROLLMENTSYSTEMBACKEND.Controllers
             {
                 return BadRequest(ex.Message); // e.g., "Student not found" or "Upload failed"
             }
+        }
+
+        [HttpGet("{id}/holds")]
+        public async Task<IActionResult> GetStudentHolds(string id)
+        {
+            if (string.IsNullOrEmpty(id))
+            {
+                return BadRequest("Student ID is required.");
+            }
+
+            var response = await _holdClient.GetHoldsAsync(id);
+            if (!response.IsSuccessStatusCode)
+            {
+                return StatusCode((int)response.StatusCode);
+            }
+
+            var content = await response.Content.ReadAsStringAsync();
+            return Ok(content);
         }
     }
 }

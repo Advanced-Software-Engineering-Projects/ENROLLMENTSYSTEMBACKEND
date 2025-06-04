@@ -1,6 +1,9 @@
 ﻿﻿using ENROLLMENTSYSTEMBACKEND.Models;
 using ENROLLMENTSYSTEMBACKEND.Data;
 using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace ENROLLMENTSYSTEMBACKEND.Repositories
 {
@@ -64,6 +67,14 @@ namespace ENROLLMENTSYSTEMBACKEND.Repositories
                 _context.Enrollments.Remove(enrollment);
                 await _context.SaveChangesAsync();
             }
+        }
+
+        public async Task<List<(string Semester, int Count)>> GetEnrollmentCountsBySemesterAsync()
+        {
+            return await _context.Enrollments
+                .GroupBy(e => e.Semester)
+                .Select(g => new ValueTuple<string, int>(g.Key, g.Count()))
+                .ToListAsync();
         }
     }
 }

@@ -12,5 +12,7 @@ namespace ENROLLMENTSYSTEMBACKEND.Repositories
         Task UpdateEnrollmentAsync(Enrollment enrollment);
         Task DeleteEnrollmentAsync(string enrollmentId);
         Task<List<Enrollment>> GetAllEnrollmentsAsync();
+
+        Task<List<(string Semester, int Count)>> GetEnrollmentCountsBySemesterAsync();
     }
 }

@@ -13,11 +13,13 @@ namespace ENROLLMENTSYSTEMBACKEND.Services
     {
         private readonly IFormRepository _formRepository;
         private readonly ExternalFormIntegrationServiceClient _externalFormClient;
+        private readonly INotificationService _notificationService;
 
-        public FormService(IFormRepository formRepository, ExternalFormIntegrationServiceClient externalFormClient)
+        public FormService(IFormRepository formRepository, ExternalFormIntegrationServiceClient externalFormClient, INotificationService notificationService)
         {
             _formRepository = formRepository;
             _externalFormClient = externalFormClient;
+            _notificationService = notificationService;
         }
 
         public async Task<List<FormSubmissionDto>> GetFormsAsync(string? studentId, string? formType)
@@ -95,6 +97,10 @@ namespace ENROLLMENTSYSTEMBACKEND.Services
             };
 
             await _formRepository.AddFormAsync(form);
+
+            // Notify student of form submission status
+            await _notificationService.NotifyFormApplicationStatusAsync(formDto.StudentId, formDto.FormType, form.Status);
+
             return form;
         }
 
@@ -107,6 +113,10 @@ namespace ENROLLMENTSYSTEMBACKEND.Services
             }
             await _formRepository.UpdateFormStatusAsync(updateStatusDto.SubmissionId, updateStatusDto.Status);
             form.Status = updateStatusDto.Status;
+
+            // Notify student of updated form status
+            await _notificationService.NotifyFormApplicationStatusAsync(form.StudentId, form.FormType, form.Status);
+
             return new FormSubmissionDto
             {
                 SubmissionId = form.SubmissionId,

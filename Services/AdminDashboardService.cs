@@ -1,35 +1,84 @@
 using ENROLLMENTSYSTEMBACKEND.DTOs;
-using ENROLLMENTSYSTEMBACKEND.Services;
+using ENROLLMENTSYSTEMBACKEND.Repositories;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace ENROLLMENTSYSTEMBACKEND.Services
 {
     public class AdminDashboardService : IAdminDashboardService
     {
-        public Task<DashboardMetricsDto> GetDashboardMetricsAsync()
+        private readonly IPendingRequestRepository _pendingRequestRepository;
+        private readonly IEnrollmentRepository _enrollmentRepository;
+        private readonly IGradeService _gradeService;
+
+        public AdminDashboardService(
+            IPendingRequestRepository pendingRequestRepository,
+            IEnrollmentRepository enrollmentRepository,
+            IGradeService gradeService)
         {
-            // TODO: Implement actual logic
-            throw new NotImplementedException();
+            _pendingRequestRepository = pendingRequestRepository;
+            _enrollmentRepository = enrollmentRepository;
+            _gradeService = gradeService;
         }
 
-        public Task<List<PendingRequestDto>> GetPendingRequestsAsync()
+        public async Task<DashboardMetricsDto> GetDashboardMetricsAsync()
         {
-            // TODO: Implement actual logic
-            throw new NotImplementedException();
+            // Placeholder implementation - can be extended to aggregate real data
+            return await Task.FromResult(new DashboardMetricsDto
+            {
+                RequestId = "SampleRequestId",
+                StudentId = "SampleStudentId",
+                CourseId = "SampleCourseId",
+                RequestDate = DateTime.UtcNow
+            });
         }
 
-        public Task<List<EnrollmentDataDto>> GetEnrollmentDataAsync()
+        public async Task<List<PendingRequestDto>> GetPendingRequestsAsync()
         {
-            // TODO: Implement actual logic
-            throw new NotImplementedException();
+            var pendingRequests = await _pendingRequestRepository.GetPendingRequestsAsync();
+            return pendingRequests.Select(pr => new PendingRequestDto
+            {
+                RequestId = pr.Id,
+                StudentId = pr.StudentId,
+                CourseId = pr.CourseCode,
+                RequestDate = pr.Date
+            }).ToList();
         }
 
-        public Task<List<CompletionRateDataDto>> GetCompletionRateDataAsync()
+        public async Task<List<EnrollmentDataDto>> GetEnrollmentDataAsync()
         {
-            // TODO: Implement actual logic
-            throw new NotImplementedException();
+            var enrollmentCounts = await _enrollmentRepository.GetEnrollmentCountsBySemesterAsync();
+            return enrollmentCounts.Select(ec => new EnrollmentDataDto
+            {
+                Semester = ec.Item1,
+                EnrollmentCount = ec.Item2
+            }).ToList();
+        }
+
+        public async Task<List<CompletionRateDataDto>> GetCompletionRateDataAsync()
+        {
+            var enrollments = await _enrollmentRepository.GetAllEnrollmentsAsync();
+            var groupedBySemester = enrollments.GroupBy(e => e.Semester);
+
+            var completionRates = new List<CompletionRateDataDto>();
+
+            foreach (var group in groupedBySemester)
+            {
+                var total = group.Count();
+                var completed = group.Count(e => !string.IsNullOrEmpty(e.Grade) && e.Grade != "F");
+
+                var rate = total == 0 ? 0 : (double)completed / total;
+
+                completionRates.Add(new CompletionRateDataDto
+                {
+                    Semester = group.Key,
+                    CompletionRate = rate
+                });
+            }
+
+            return completionRates;
         }
     }
 }

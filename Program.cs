@@ -1,4 +1,6 @@
 using ENROLLMENTSYSTEMBACKEND.Data;
+using ENROLLMENTSYSTEMBACKEND.Extensions;
+using ENROLLMENTSYSTEMBACKEND.Models;
 using ENROLLMENTSYSTEMBACKEND.Repositories;
 using ENROLLMENTSYSTEMBACKEND.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -125,12 +127,17 @@ builder.Services.AddScoped<IStudentRepository, StudentRepository>();
 builder.Services.AddScoped<IStudentService, StudentService>();
 builder.Services.AddScoped<ITimetableRepository, TimetableRepository>();
 builder.Services.AddScoped<ITimetableService, TimetableService>();
+builder.Services.AddScoped<IFormService, FormService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
 
 // Register TokenService for token generation
 builder.Services.AddScoped<TokenService>();
 
 builder.Services.AddScoped<ExternalFormIntegrationServiceClient>(provider =>
        new ExternalFormIntegrationServiceClient());
+
+// Register HoldManagementServiceClient for microservice communication
+builder.Services.AddHttpClient<HoldManagementServiceClient>();
 
 // Add authorization
 builder.Services.AddAuthorization(options =>
@@ -211,6 +218,10 @@ app.UseStaticFiles();
 app.UseRouting();
 app.UseSession(); // Enable session if still needed for other features
 app.UseAuthentication(); // Must come before UseAuthorization
+
+// Add service access control middleware
+app.UseServiceAccessControl();
+
 app.UseAuthorization();
 app.UseResponseCaching();
 app.MapControllers();

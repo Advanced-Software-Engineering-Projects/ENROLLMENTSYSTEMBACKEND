@@ -16,10 +16,13 @@ namespace ENROLLMENTSYSTEMBACKEND.Controllers
         private readonly IFormService _formService;
         private readonly ExternalFormIntegrationServiceClient _externalFormClient;
 
-        public FormsController(IFormService formService, ExternalFormIntegrationServiceClient externalFormClient)
+        private readonly GradeRecheckServiceClient _gradeRecheckServiceClient;
+
+        public FormsController(IFormService formService, ExternalFormIntegrationServiceClient externalFormClient, GradeRecheckServiceClient gradeRecheckServiceClient)
         {
             _formService = formService;
             _externalFormClient = externalFormClient;
+            _gradeRecheckServiceClient = gradeRecheckServiceClient;
         }
 
         //Gets all form submissions for a student with optional filtering by form type.
@@ -104,6 +107,35 @@ namespace ENROLLMENTSYSTEMBACKEND.Controllers
             {
                 return BadRequest(ex.Message); // e.g., "Invalid form data"
             }
+        }
+
+        // New endpoint to apply for grade recheck
+        [HttpPost("graderecheck/apply")]
+        public async Task<IActionResult> ApplyGradeRecheck([FromBody] GradeRecheckApplicationDto application)
+        {
+            if (application == null)
+            {
+                return BadRequest("Application data is required.");
+            }
+            if (string.IsNullOrEmpty(application.StudentId))
+            {
+                return BadRequest("Student ID is required.");
+            }
+            if (string.IsNullOrEmpty(application.CourseId))
+            {
+                return BadRequest("Course ID is required.");
+            }
+            if (string.IsNullOrEmpty(application.Reason))
+            {
+                return BadRequest("Reason is required.");
+            }
+
+            var response = await _gradeRecheckServiceClient.ApplyGradeRecheckAsync(application.StudentId, application.CourseId, application.Reason);
+            if (!response.IsSuccessStatusCode)
+            {
+                return StatusCode((int)response.StatusCode, "Failed to apply for grade recheck");
+            }
+            return Ok("Grade recheck application submitted successfully.");
         }
 
         [HttpPost("upload-avatar")]

@@ -83,7 +83,7 @@ namespace ENROLLMENTSYSTEMBACKEND.Controllers
 
             try
             {
-                var addedHold = await _holdService.AddHoldAsync(Hold);
+                    var addedHold = await _holdService.AddHoldAsync(holdDto);
                 return CreatedAtAction(nameof(GetHolds), new { studentId = holdDto.StudentId }, addedHold);
             }
             catch (InvalidOperationException ex)

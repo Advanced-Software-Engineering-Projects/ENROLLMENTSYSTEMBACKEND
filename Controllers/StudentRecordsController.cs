@@ -3,6 +3,7 @@ using ENROLLMENTSYSTEMBACKEND.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
+using System.Linq;
 
 namespace ENROLLMENTSYSTEMBACKEND.Controllers
 {
@@ -12,10 +13,14 @@ namespace ENROLLMENTSYSTEMBACKEND.Controllers
     public class StudentRecordsController : ControllerBase
     {
         private readonly IStudentService _studentService;
+        private readonly IGradeService _gradeService;
+        private readonly TranscriptPdfService _transcriptPdfService;
 
-        public StudentRecordsController(IStudentService studentService)
+        public StudentRecordsController(IStudentService studentService, IGradeService gradeService, TranscriptPdfService transcriptPdfService)
         {
             _studentService = studentService;
+            _gradeService = gradeService;
+            _transcriptPdfService = transcriptPdfService;
         }
 
         //Gets a specific student by their ID
@@ -71,6 +76,47 @@ namespace ENROLLMENTSYSTEMBACKEND.Controllers
             {
                 return NotFound(ex.Message); // e.g., "No students found"
             }
+        }
+
+        [HttpGet("{id}/transcript")]
+        public async Task<IActionResult> GetTranscriptPdf(string id)
+        {
+            if (string.IsNullOrEmpty(id))
+            {
+                return BadRequest("Student ID is required.");
+            }
+
+            try
+            {
+                var transcript = await _gradeService.GetTranscriptAsync(id);
+                if (transcript == null || transcript.Enrollments == null || transcript.Enrollments.Count == 0)
+                {
+                    return NotFound("Transcript not found or no enrollments available.");
+                }
+
+                // Calculate GPA for the transcript
+                transcript.GPA = transcript.Enrollments.Any() ? transcript.Enrollments.Average(e => GetGradePoint(e.Grade)) : 0.0;
+
+                var pdfBytes = _transcriptPdfService.GenerateTranscriptPdf(transcript);
+                return File(pdfBytes, "application/pdf", $"Transcript_{id}.pdf");
+            }
+            catch (InvalidOperationException ex)
+            {
+                return NotFound(ex.Message);
+            }
+        }
+
+        private double GetGradePoint(string grade)
+        {
+            return grade switch
+            {
+                "A" => 4.0,
+                "B" => 3.0,
+                "C" => 2.0,
+                "D" => 1.0,
+                "F" => 0.0,
+                _ => 0.0
+            };
         }
     }
 }
