@@ -8,6 +8,7 @@
         public int Credits { get; set; }
         public string Description { get; set; }
         public string Program { get; set; }
+        public int Year { get; set; }
         public DateTime DueDate { get; set; }
         public bool IsActive { get; set; }
         public List<string> Prerequisites { get; set; } = new List<string>();

@@ -1,14 +1,14 @@
-﻿using ENROLLMENTSYSTEMBACKEND.Models;
+using ENROLLMENTSYSTEMBACKEND.Models;
 using ENROLLMENTSYSTEMBACKEND.Repositories;
-using Microsoft.Extensions.Logging; // Added for logging
-using BCrypt.Net; // Added for BCrypt
+using Microsoft.Extensions.Logging;
+using BCrypt.Net;
 
 namespace ENROLLMENTSYSTEMBACKEND.Services
 {
     public class AuthService : IAuthService
     {
         private readonly IUserRepository _userRepository;
-        private readonly ILogger<AuthService> _logger; // Added for logging
+        private readonly ILogger<AuthService> _logger;
 
         public AuthService(IUserRepository userRepository, ILogger<AuthService> logger)
         {
@@ -16,7 +16,7 @@ namespace ENROLLMENTSYSTEMBACKEND.Services
             _logger = logger;
         }
 
-        public async Task<User> AuthenticateAsync(string email, string password)
+        public async Task<User?> AuthenticateAsync(string email, string password)
         {
             _logger.LogInformation("Authenticating user with email: {Email}", email);
 

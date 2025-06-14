@@ -1,10 +1,10 @@
 using ENROLLMENTSYSTEMBACKEND.DTOs;
-using PdfSharpCore.Drawing;
-using PdfSharpCore.Pdf;
+using QuestPDF.Fluent;
+using QuestPDF.Helpers;
+using QuestPDF.Infrastructure;
 using System;
 using System.IO;
 using System.Linq;
-using System.Text;
 
 namespace ENROLLMENTSYSTEMBACKEND.Services
 {
@@ -12,64 +12,84 @@ namespace ENROLLMENTSYSTEMBACKEND.Services
     {
         public byte[] GenerateTranscriptPdf(TranscriptDto transcript)
         {
-            using (var document = new PdfDocument())
+            // Configure QuestPDF
+            QuestPDF.Settings.License = LicenseType.Community;
+
+            var document = Document.Create(container =>
             {
-                var page = document.AddPage();
-                var gfx = XGraphics.FromPdfPage(page);
-                var fontTitle = new XFont("Verdana", 20, XFontStyle.Bold);
-                var fontHeader = new XFont("Verdana", 12, XFontStyle.Bold);
-                var fontRegular = new XFont("Verdana", 10, XFontStyle.Regular);
-
-                double yPoint = 40;
-
-                // Title
-                gfx.DrawString("Academic Transcript", fontTitle, XBrushes.Black,
-                    new XRect(0, yPoint, page.Width, 40), XStringFormats.TopCenter);
-                yPoint += 50;
-
-                // Student ID and GPA
-                gfx.DrawString($"Student ID: {transcript.StudentId}", fontHeader, XBrushes.Black,
-                    new XRect(40, yPoint, page.Width, 20), XStringFormats.TopLeft);
-                yPoint += 25;
-
-                gfx.DrawString($"GPA: {transcript.GPA:F2}", fontHeader, XBrushes.Black,
-                    new XRect(40, yPoint, page.Width, 20), XStringFormats.TopLeft);
-                yPoint += 30;
-
-                // Table headers
-                gfx.DrawString("Course Code", fontHeader, XBrushes.Black, 40, yPoint);
-                gfx.DrawString("Course Name", fontHeader, XBrushes.Black, 140, yPoint);
-                gfx.DrawString("Semester", fontHeader, XBrushes.Black, 400, yPoint);
-                gfx.DrawString("Grade", fontHeader, XBrushes.Black, 500, yPoint);
-                yPoint += 20;
-
-                // Draw a line under headers
-                gfx.DrawLine(XPens.Black, 40, yPoint, page.Width - 40, yPoint);
-                yPoint += 10;
-
-                // List enrollments
-                foreach (var enrollment in transcript.Enrollments)
+                container.Page(page =>
                 {
-                    if (yPoint > page.Height - 50)
+                    page.Size(PageSizes.A4);
+                    page.Margin(50);
+                    page.DefaultTextStyle(x => x.FontSize(10));
+
+                    page.Header().Element(header =>
                     {
-                        // Add new page if space is insufficient
-                        page = document.AddPage();
-                        gfx = XGraphics.FromPdfPage(page);
-                        yPoint = 40;
-                    }
+                        header.AlignCenter().Text("Academic Transcript")
+                            .FontSize(20).Bold();
+                    });
 
-                    gfx.DrawString(enrollment.CourseCode ?? "", fontRegular, XBrushes.Black, 40, yPoint);
-                    gfx.DrawString(enrollment.CourseName ?? "", fontRegular, XBrushes.Black, 140, yPoint);
-                    gfx.DrawString(enrollment.Semester ?? "", fontRegular, XBrushes.Black, 400, yPoint);
-                    gfx.DrawString(enrollment.Grade ?? "", fontRegular, XBrushes.Black, 500, yPoint);
-                    yPoint += 20;
-                }
+                    page.Content().Element(content =>
+                    {
+                        content.Column(column =>
+                        {
+                            // Student information
+                            column.Item().PaddingVertical(10).Row(row =>
+                            {
+                                row.RelativeItem().Column(c =>
+                                {
+                                    c.Item().Text($"Student ID: {transcript.StudentId}").Bold();
+                                    c.Item().Text($"GPA: {transcript.GPA:F2}").Bold();
+                                });
+                            });
 
-                using (var stream = new MemoryStream())
-                {
-                    document.Save(stream, false);
-                    return stream.ToArray();
-                }
+                            // Enrollments table
+                            column.Item().Table(table =>
+                            {
+                                // Define columns
+                                table.ColumnsDefinition(columns =>
+                                {
+                                    columns.RelativeColumn(2);
+                                    columns.RelativeColumn(4);
+                                    columns.RelativeColumn(2);
+                                    columns.RelativeColumn(1);
+                                });
+
+                                // Add header row
+                                table.Header(header =>
+                                {
+                                    header.Cell().Text("Course Code").Bold();
+                                    header.Cell().Text("Course Name").Bold();
+                                    header.Cell().Text("Semester").Bold();
+                                    header.Cell().Text("Grade").Bold();
+                                });
+
+                                // Add data rows
+                                foreach (var enrollment in transcript.Enrollments)
+                                {
+                                    table.Cell().Text(enrollment.CourseCode ?? "");
+                                    table.Cell().Text(enrollment.CourseName ?? "");
+                                    table.Cell().Text(enrollment.Semester ?? "");
+                                    table.Cell().Text(enrollment.Grade ?? "");
+                                }
+                            });
+                        });
+                    });
+
+                    page.Footer().AlignCenter().Text(x =>
+                    {
+                        x.Span("Page ");
+                        x.CurrentPageNumber();
+                        x.Span(" of ");
+                        x.TotalPages();
+                    });
+                });
+            });
+
+            using (var stream = new MemoryStream())
+            {
+                document.GeneratePdf(stream);
+                return stream.ToArray();
             }
         }
     }

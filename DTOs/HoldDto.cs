@@ -2,8 +2,8 @@
 {
     public class HoldDto
     {
-        public string StudentId { get; set; }
-        public string Service { get; set; }
-        public string Reason { get; set; }
+        public required string StudentId { get; set; }
+        public required string Service { get; set; }
+        public required string Reason { get; set; }
     }
 }

@@ -1,4 +1,4 @@
-﻿using ENROLLMENTSYSTEMBACKEND.DTOs;
+using ENROLLMENTSYSTEMBACKEND.DTOs;
 using ENROLLMENTSYSTEMBACKEND.Models;
 using ENROLLMENTSYSTEMBACKEND.Repositories;
 using System;
@@ -108,6 +108,8 @@ namespace ENROLLMENTSYSTEMBACKEND.Services
             return new ProgramAuditDto
             {
                 StudentId = studentId,
+                StudentName = "Student Name", // Adding required property
+                ProgramName = "Program Name", // Adding required property
                 CourseStatuses = courseStatuses,
                 CompletionProgress = (double)completedCourses.Count / requiredCourses.Count,
                 IsEligible = isEligible
@@ -139,7 +141,9 @@ namespace ENROLLMENTSYSTEMBACKEND.Services
             // Placeholder: In a real system, this would interact with a database or service
             return await Task.FromResult(new GraduationApplicationDto
             {
+                ApplicationId = Guid.NewGuid().ToString(),
                 StudentId = studentId,
+                ApplicationDate = DateTime.UtcNow,
                 Status = "Applied"
             });
         }
@@ -149,7 +153,9 @@ namespace ENROLLMENTSYSTEMBACKEND.Services
             // Placeholder: In a real system, this would fetch from a database
             return await Task.FromResult(new GraduationApplicationDto
             {
+                ApplicationId = Guid.NewGuid().ToString(),
                 StudentId = studentId,
+                ApplicationDate = DateTime.UtcNow,
                 Status = "Pending"
             });
         }
@@ -166,11 +172,28 @@ namespace ENROLLMENTSYSTEMBACKEND.Services
 
         public async Task<FormSubmissionDto> UpdateGradeAsync(UpdateGradeDto updateGradeDto)
         {
+            if (string.IsNullOrEmpty(updateGradeDto.SubmissionId))
+            {
+                throw new ArgumentException("SubmissionId cannot be null or empty");
+            }
+
+            if (!int.TryParse(updateGradeDto.SubmissionId, out int submissionId))
+            {
+                throw new ArgumentException("SubmissionId must be a valid integer");
+            }
+
             // Placeholder: In a real system, this would update the grade in the repository
             return await Task.FromResult(new FormSubmissionDto
             {
-                SubmissionId = updateGradeDto.SubmissionId,
-                Status = "Updated"
+                SubmissionId = submissionId,
+                StudentId = "S123",
+                FullName = "Student Name",
+                Email = "student@example.com",
+                Telephone = "123-456-7890",
+                PostalAddress = "123 Main St",
+                FormType = "Grade Update",
+                Status = "Updated",
+                EmailStatus = "Sent"
             });
         }
 

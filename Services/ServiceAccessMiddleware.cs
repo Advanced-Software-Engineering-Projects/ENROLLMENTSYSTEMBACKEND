@@ -36,7 +36,7 @@ namespace ENROLLMENTSYSTEMBACKEND.Services
             }
 
             // Determine which service is being accessed based on the path
-            string serviceCode = GetServiceCodeFromPath(context.Request.Path);
+            string? serviceCode = GetServiceCodeFromPath(context.Request.Path);
             if (string.IsNullOrEmpty(serviceCode))
             {
                 await _next(context);
@@ -71,7 +71,7 @@ namespace ENROLLMENTSYSTEMBACKEND.Services
             });
         }
 
-        private string GetServiceCodeFromPath(PathString path)
+        private string? GetServiceCodeFromPath(PathString path)
         {
             if (path.StartsWithSegments("/api/course-registrations"))
                 return "course_registration";

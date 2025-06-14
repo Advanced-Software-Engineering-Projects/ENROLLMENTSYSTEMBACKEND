@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace ENROLLMENTSYSTEMBACKEND.Migrations
 {
-    [DbContext(typeof(EnrollmentInfromation))]
+    [DbContext(typeof(ApplicationDbContext))]
     [Migration("20250601213626_InitialCreate")]
     partial class InitialCreate
     {

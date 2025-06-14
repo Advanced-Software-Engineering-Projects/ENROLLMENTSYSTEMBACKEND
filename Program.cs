@@ -1,243 +1,179 @@
 using ENROLLMENTSYSTEMBACKEND.Data;
-using ENROLLMENTSYSTEMBACKEND.Extensions;
-using ENROLLMENTSYSTEMBACKEND.Models;
 using ENROLLMENTSYSTEMBACKEND.Repositories;
 using ENROLLMENTSYSTEMBACKEND.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Services;
 using System.Text;
 
-var builder = WebApplication.CreateBuilder(args);
-
-// Add services to the container
-builder.Services.AddControllers();
-builder.Services.AddDistributedMemoryCache(); 
-builder.Services.AddSession(options =>
+namespace ENROLLMENTSYSTEMBACKEND
 {
-    options.IdleTimeout = TimeSpan.FromMinutes(15); // Session expires after 15 minutes of inactivity
-    options.Cookie.HttpOnly = true;
-    options.Cookie.IsEssential = true;
-});
-
-// Register Swagger services with enhanced configuration
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(options =>
-{
-    options.SwaggerDoc("v1", new OpenApiInfo
+    public class Program
     {
-        Title = "USP Enrollment System API",
-        Version = "v1",
-        Description = "API documentation for the USP Enrollment System",
-        Contact = new OpenApiContact
+        public static void Main(string[] args)
         {
-            Name = "Support",
-            Email = "support@example.com"
-        }
-    });
+            var builder = WebApplication.CreateBuilder(args);
 
-    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
-    {
-        Description = "JWT Authorization header using the Bearer scheme. Example: 'Bearer {token}'",
-        Name = "Authorization",
-        In = ParameterLocation.Header,
-        Type = SecuritySchemeType.Http,
-        Scheme = "Bearer"
-    });
-
-    options.AddSecurityRequirement(new OpenApiSecurityRequirement
-    {
-        {
-            new OpenApiSecurityScheme
+            // Add services to the container.
+            builder.Services.AddControllers();
+            builder.Services.AddEndpointsApiExplorer();
+            builder.Services.AddSwaggerGen(c =>
             {
-                Reference = new OpenApiReference
+                c.SwaggerDoc("v1", new OpenApiInfo { Title = "Enrollment System API", Version = "v1" });
+                c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
                 {
-                    Type = ReferenceType.SecurityScheme,
-                    Id = "Bearer"
-                }
-            },
-            Array.Empty<string>()
-        }
-    });
-});
+                    Description = "JWT Authorization header using the Bearer scheme",
+                    Name = "Authorization",
+                    In = ParameterLocation.Header,
+                    Type = SecuritySchemeType.ApiKey,
+                    Scheme = "Bearer"
+                });
+                c.AddSecurityRequirement(new OpenApiSecurityRequirement
+                {
+                    {
+                        new OpenApiSecurityScheme
+                        {
+                            Reference = new OpenApiReference
+                            {
+                                Type = ReferenceType.SecurityScheme,
+                                Id = "Bearer"
+                            }
+                        },
+                        Array.Empty<string>()
+                    }
+                });
+            });
 
-// Register DbContexts for the three databases
-builder.Services.AddDbContext<EnrollmentInfromation>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+            // Configure database for EnrollmentInformationDbContext (consolidated)
+            builder.Services.AddDbContext<EnrollmentInformationDbContext>(options =>
+                options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+            builder.Services.AddScoped<EnrollmentInformationDbContext>();
 
-// Dependency Injection for Repositories and Services
-builder.Services.AddScoped<IStudentRepository, StudentRepository>();
-builder.Services.AddScoped<IEnrollmentRepository, EnrollmentRepository>();
-builder.Services.AddScoped<ICourseRepository, CourseRepository>();
-builder.Services.AddScoped<IGradeService, GradeService>();
-builder.Services.AddScoped<IRegistrationPeriodRepository, RegistrationPeriodRepository>();
-builder.Services.AddScoped<IEnrollmentRepository, EnrollmentRepository>();
-builder.Services.AddScoped<ICourseRepository, CourseRepository>();
-builder.Services.AddScoped<IStudentRepository, StudentRepository>();
-builder.Services.AddScoped<IRegistrationPeriodService, RegistrationPeriodService>();
-builder.Services.AddScoped<IFormRepository, FormRepository>();
-builder.Services.AddScoped<IGradeRepository, GradeRepository>();
-builder.Services.AddScoped<IFormService, FormService>();
-builder.Services.AddScoped<IGradeService, GradeService>();
-builder.Services.AddScoped<IEmailService, EmailService>();
-builder.Services.AddScoped<IStudentRepository, StudentRepository>();
-builder.Services.AddScoped<IHoldRepository, HoldRepository>();
-builder.Services.AddScoped<IStudentService, StudentService>();
-builder.Services.AddScoped<IHoldService, HoldService>();
-builder.Services.AddScoped<IAuthService, AuthService>();
-builder.Services.AddScoped<IUserRepository, UserRepository>();
-builder.Services.AddScoped<ICourseRepository, CourseRepository>();
-builder.Services.AddScoped<IStudentRepository, StudentRepository>();
-builder.Services.AddScoped<IEnrollmentRepository, EnrollmentRepository>();
-builder.Services.AddScoped<ICourseService, CourseService>();
-builder.Services.AddScoped<ICourseRepository, CourseRepository>();
-builder.Services.AddScoped<ICourseService, CourseService>();
-builder.Services.AddScoped<ICourseRepository, CourseRepository>();
-builder.Services.AddScoped<IStudentRepository, StudentRepository>();
-builder.Services.AddScoped<IEnrollmentRepository, EnrollmentRepository>();
-builder.Services.AddScoped<IPendingRequestRepository, PendingRequestRepository>();
-builder.Services.AddScoped<IDashboardService, DashboardService>();
-builder.Services.AddScoped<IAdminDashboardService, AdminDashboardService>();
-builder.Services.AddScoped<ICourseRepository, CourseRepository>();
-builder.Services.AddScoped<IStudentRepository, StudentRepository>();
-builder.Services.AddScoped<IEnrollmentRepository, EnrollmentRepository>();
-builder.Services.AddScoped<IPrerequisiteRepository, PrerequisiteRepository>();
-builder.Services.AddScoped<IEnrollmentService, EnrollmentService>();
-builder.Services.AddScoped<IFeeRepository, FeeRepository>();
-builder.Services.AddScoped<IPaymentRecordRepository, PaymentRecordRepository>();
-builder.Services.AddScoped<IFeeHoldRepository, FeeHoldRepository>();
-builder.Services.AddScoped<IFeeService, FeeService>();
-builder.Services.AddScoped<IFormRepository, FormRepository>();
-builder.Services.AddScoped<IFormService, FormService>();
-builder.Services.AddScoped<IStudentRepository, StudentRepository>();
-builder.Services.AddScoped<IEnrollmentRepository, EnrollmentRepository>();
-builder.Services.AddScoped<IGradeService, GradeService>();
-builder.Services.AddScoped<IStudentRepository, StudentRepository>();
-builder.Services.AddScoped<IProgramRepository, ProgramRepository>();
-builder.Services.AddScoped<ICourseRepository, CourseRepository>();
-builder.Services.AddScoped<IEnrollmentRepository, EnrollmentRepository>();
-builder.Services.AddScoped<IProgramService, ProgramService>();
-builder.Services.AddScoped<IStudentRepository, StudentRepository>();
-builder.Services.AddScoped<IStudentService, StudentService>();
-builder.Services.AddScoped<IStudentRepository, StudentRepository>();
-builder.Services.AddScoped<IStudentService, StudentService>();
-builder.Services.AddScoped<ITimetableRepository, TimetableRepository>();
-builder.Services.AddScoped<ITimetableService, TimetableService>();
-builder.Services.AddScoped<IFormService, FormService>();
-builder.Services.AddScoped<INotificationService, NotificationService>();
+            // Remove previous EnrollmentInformation registration if present
+            // builder.Services.AddDbContext<EnrollmentInformation>(options =>
+            //     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+            // builder.Services.AddScoped<EnrollmentInformation>();
 
-// Register TokenService for token generation
-builder.Services.AddScoped<TokenService>();
+            builder.Services.AddDbContext<EnrollmentInformationDbContext>(options =>
+                options.UseSqlServer(builder.Configuration.GetConnectionString("EnrollmentInformationConnection")));
 
-builder.Services.AddScoped<ExternalFormIntegrationServiceClient>(provider =>
-       new ExternalFormIntegrationServiceClient());
+            builder.Services.AddDbContext<ApplicationDbContext>(options =>
+                options.UseSqlServer(builder.Configuration.GetConnectionString("ApplicationConnection")));
 
-// Register HoldManagementServiceClient for microservice communication
-builder.Services.AddHttpClient<HoldManagementServiceClient>();
+            // Configure JWT authentication
+            builder.Services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            })
+            .AddJwtBearer(options =>
+            {
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidateLifetime = true,
+                    ValidateIssuerSigningKey = true,
+                    ValidIssuer = builder.Configuration["Jwt:Issuer"],
+                    ValidAudience = builder.Configuration["Jwt:Audience"],
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
+                };
+            });
 
-// Add authorization
-builder.Services.AddAuthorization(options =>
-{
-    options.AddPolicy("Student", policy => policy.RequireRole("Student"));
-    options.AddPolicy("Admin", policy => policy.RequireRole("Admin"));
-});
+            // Register repositories
+            builder.Services.AddScoped<IUserRepository, UserRepository>();
+            builder.Services.AddScoped<IStudentRepository, StudentRepository>();
+            builder.Services.AddScoped<ICourseRepository, CourseRepository>();
+            builder.Services.AddScoped<IEnrollmentRepository, EnrollmentRepository>();
+            builder.Services.AddScoped<IGradeRepository, GradeRepository>();
+            builder.Services.AddScoped<IFeeRepository, FeeRepository>();
+            builder.Services.AddScoped<IFeeHoldRepository, FeeHoldRepository>();
+            builder.Services.AddScoped<IFormRepository, FormRepository>();
+            builder.Services.AddScoped<IFormSubmissionRepository, FormSubmissionRepository>();
+            builder.Services.AddScoped<IPaymentRecordRepository, PaymentRecordRepository>();
+            builder.Services.AddScoped<IPendingRequestRepository, PendingRequestRepository>();
+            builder.Services.AddScoped<IPrerequisiteRepository, PrerequisiteRepository>();
+            builder.Services.AddScoped<IProgramRepository, ProgramRepository>();
+            builder.Services.AddScoped<IRegistrationPeriodRepository, RegistrationPeriodRepository>();
+            builder.Services.AddScoped<IServiceHoldRepository, ServiceHoldRepository>();
+            builder.Services.AddScoped<IStudentRecordRepository, StudentRecordRepository>();
+            builder.Services.AddScoped<ITimetableRepository, TimetableRepository>();
+            builder.Services.AddScoped<IUserLogRepository, UserLogRepository>();
+            builder.Services.AddScoped<ICourseManagementRepository, CourseManagementRepository>();
+            builder.Services.AddScoped<IHoldRepository, HoldRepository>();
 
-// Add CORS policy
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("AllowSpecificOrigins",
-        builder =>
-        {
-            builder.WithOrigins("https://localhost:5230", "http://localhost:5173", "http://192.168.208.42:5064", "http://192.168.114.227:5173")
-                   .AllowAnyHeader()
-                   .AllowAnyMethod()
-                   .AllowCredentials();
-        });
-});
+            // Register services
+            builder.Services.AddScoped<IAuthService, AuthService>();
+            builder.Services.AddScoped<IStudentService, StudentService>();
+            builder.Services.AddScoped<ICourseService, CourseService>();
+            builder.Services.AddScoped<IEnrollmentService, EnrollmentService>();
+            builder.Services.AddScoped<IGradeService, GradeService>();
+            builder.Services.AddScoped<IFeeService, FeeService>();
+            builder.Services.AddScoped<IFormService, FormService>();
+            builder.Services.AddScoped<IFormConfigurationService, FormConfigurationService>();
+            builder.Services.AddScoped<IProgramService, ProgramService>();
+            builder.Services.AddScoped<IRegistrationPeriodService, RegistrationPeriodService>();
+            builder.Services.AddScoped<IServiceHoldService, ServiceHoldService>();
+            builder.Services.AddScoped<IStudentRecordService, StudentRecordService>();
+            builder.Services.AddScoped<ITimetableService, TimetableService>();
+            builder.Services.AddScoped<ITranscriptService, TranscriptService>();
+            builder.Services.AddScoped<IUserLogService, UserLogService>();
+            builder.Services.AddScoped<ICourseManagementService, CourseManagementService>();
+            builder.Services.AddScoped<IDashboardService, DashboardService>();
+            builder.Services.AddScoped<IAdminDashboardService, AdminDashboardService>();
+            builder.Services.AddScoped<IHoldService, HoldService>();
+            builder.Services.AddScoped<IGradeRecheckService, GradeRecheckService>();
+            builder.Services.AddScoped<IEmailService, EmailService>();
+            builder.Services.AddScoped<INotificationService, NotificationService>();
 
-builder.Services.AddHttpClient("Service1", client =>
-{
-    client.BaseAddress = new Uri("http://localhost:5001/"); 
-});
-builder.Services.AddHttpClient("Service2", client =>
-{
-    client.BaseAddress = new Uri("http://localhost:5002/"); 
-});
-builder.Services.AddHttpClient("Service3", client =>
-{
-    client.BaseAddress = new Uri("http://localhost:5003/"); 
-});
+            // Register HTTP clients
+            builder.Services.AddHttpClient<ExternalFormIntegrationServiceClient>(client =>
+            {
+                client.BaseAddress = new Uri(builder.Configuration["ServiceEndpoints:FormsService"] ?? "http://forms-service/api/");
+            });
 
-// Add JWT Authentication with enhanced security
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
-    {
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true,
-            ValidIssuer = "USPEnrollmentSystem",
-            ValidAudience = "USPStudentsAndAdmins",
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("YourSecretKeyWithAtLeast32Characters"))
-        };
-    });
+            builder.Services.AddHttpClient<GradeRecheckServiceClient>(client =>
+            {
+                client.BaseAddress = new Uri(builder.Configuration["ServiceEndpoints:GradeRecheckService"] ?? "http://grade-recheck-service/api/");
+            });
 
-// Add Authorization Policies
-builder.Services.AddAuthorization(options =>
-{
-    options.AddPolicy("Student", policy => policy.RequireRole("Student"));
-});
+            builder.Services.AddHttpClient<StudentFormsServiceClient>(client =>
+            {
+                client.BaseAddress = new Uri(builder.Configuration["ServiceEndpoints:FormsService"] ?? "http://forms-service/api/");
+            });
 
-// Add enhanced logging
-builder.Services.AddLogging(loggingBuilder =>
-{
-    loggingBuilder.AddConsole();
-    loggingBuilder.AddDebug();
-});
+            // Add CORS
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("AllowAll", builder =>
+                {
+                    builder.AllowAnyOrigin()
+                           .AllowAnyMethod()
+                           .AllowAnyHeader();
+                });
+            });
 
-// Add health checks for monitoring
-builder.Services.AddHealthChecks();
+            var app = builder.Build();
 
-// Add response caching for performance
-builder.Services.AddResponseCaching();
+            // Configure the HTTP request pipeline.
+            if (app.Environment.IsDevelopment())
+            {
+                app.UseSwagger();
+                app.UseSwaggerUI();
+            }
 
-var app = builder.Build();
+            app.UseHttpsRedirection();
+            app.UseCors("AllowAll");
+            app.UseAuthentication();
+            app.UseAuthorization();
+            app.MapControllers();
+            
+            // Redirect root to Swagger UI
+            app.MapGet("/", () => Results.Redirect("/swagger"));
 
-// Configure the HTTP request pipeline
-app.UseSwagger();
-app.UseCors("AllowSpecificOrigins");
-app.UseSwaggerUI();
-app.UseHttpsRedirection();
-app.UseStaticFiles();
-app.UseRouting();
-app.UseSession(); // Enable session if still needed for other features
-app.UseAuthentication(); // Must come before UseAuthorization
-
-// Add service access control middleware
-app.UseServiceAccessControl();
-
-app.UseAuthorization();
-app.UseResponseCaching();
-app.MapControllers();
-app.MapHealthChecks("/health");
-app.MapFallbackToFile("index.html");
-
-app.Run();
-
-// Custom Model Validation Filter
-public class ValidateModelAttribute : ActionFilterAttribute
-{
-    public override void OnActionExecuting(ActionExecutingContext context)
-    {
-        if (!context.ModelState.IsValid)
-        {
-            context.Result = new BadRequestObjectResult(context.ModelState);
+            app.Run();
         }
     }
 }

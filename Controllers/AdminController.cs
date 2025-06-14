@@ -179,8 +179,8 @@ namespace ENROLLMENTSYSTEMBACKEND.Controllers
             if (courseRegistrationDto == null ||
                 courseRegistrationDto.StartDate == default ||
                 courseRegistrationDto.EndDate == default ||
-                courseRegistrationDto.StartTime == null ||
-                courseRegistrationDto.EndTime == null ||
+                courseRegistrationDto.StartTime == TimeSpan.Zero ||
+                courseRegistrationDto.EndTime == TimeSpan.Zero ||
                 courseRegistrationDto.CourseCodes == null ||
                 courseRegistrationDto.CourseCodes.Count == 0)
             {

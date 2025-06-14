@@ -1,6 +1,10 @@
 ﻿using ENROLLMENTSYSTEMBACKEND.DTOs;
 using ENROLLMENTSYSTEMBACKEND.Models;
 using ENROLLMENTSYSTEMBACKEND.Repositories;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace ENROLLMENTSYSTEMBACKEND.Services
 {
@@ -70,6 +74,33 @@ namespace ENROLLMENTSYSTEMBACKEND.Services
         {
             var holds = await _holdRepository.GetHoldsAsync(studentId);
             return holds.Any();
+        }
+
+        // Implementing missing interface methods
+        public async Task<List<string>> GetAvailableServicesAsync()
+        {
+            // Default implementation
+            return await Task.FromResult(new List<string> { "enrollment", "view_transcript", "fee_payment" });
+        }
+
+        public async Task UpdateStudentHoldServicesAsync(string studentId, List<string> restrictedServices)
+        {
+            // Default implementation
+            await Task.CompletedTask;
+        }
+
+        public async Task<List<string>> GetStudentRestrictedServicesAsync(string studentId)
+        {
+            // Default implementation
+            var holds = await _holdRepository.GetHoldsAsync(studentId);
+            return holds.Select(h => h.Service).ToList();
+        }
+
+        public async Task<bool> CanAccessServiceAsync(string studentId, string service)
+        {
+            // Default implementation
+            var restrictedServices = await GetStudentRestrictedServicesAsync(studentId);
+            return !restrictedServices.Contains(service);
         }
     }
 }

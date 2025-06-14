@@ -2,6 +2,6 @@
 {
     public class CourseCloseDto
     {
-        public List<string> CourseCodes { get; set; }
+        public required List<string> CourseCodes { get; set; }
     }
 }

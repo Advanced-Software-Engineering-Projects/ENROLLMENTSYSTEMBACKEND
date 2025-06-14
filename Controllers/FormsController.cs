@@ -26,7 +26,7 @@ namespace ENROLLMENTSYSTEMBACKEND.Controllers
         }
 
         //Gets all form submissions for a student with optional filtering by form type.
-        [HttpGet]
+        [HttpGet("list")]
         public async Task<ActionResult<List<FormSubmissionDto>>> GetForms(string? studentId, string? formType)
         {
             var forms = await _formService.GetFormsAsync(studentId, formType);

@@ -7,7 +7,7 @@ namespace Services
 {
     public class ExternalFormIntegrationServiceClient
     {
-        private readonly HttpClient _httpClient;
+        private HttpClient _httpClient;
 
         public ExternalFormIntegrationServiceClient(HttpClient httpClient)
         {
@@ -16,6 +16,7 @@ namespace Services
 
         public ExternalFormIntegrationServiceClient()
         {
+            _httpClient = new HttpClient();
         }
 
         public async Task<HttpResponseMessage> GetFormsAsync()

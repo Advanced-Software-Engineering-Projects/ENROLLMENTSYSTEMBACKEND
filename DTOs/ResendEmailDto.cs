@@ -1,9 +1,9 @@
-﻿namespace ENROLLMENTSYSTEMBACKEND.DTOs
+namespace ENROLLMENTSYSTEMBACKEND.DTOs
 {
     public class ResendEmailDto
     {
-        public string SubmissionId { get; set; }
-        public string FormType { get; set; }
-        public string StudentEmail { get; set; }
+        public string SubmissionId { get; set; } = string.Empty;
+        public string FormType { get; set; } = string.Empty;
+        public string StudentEmail { get; set; } = string.Empty;
     }
 }

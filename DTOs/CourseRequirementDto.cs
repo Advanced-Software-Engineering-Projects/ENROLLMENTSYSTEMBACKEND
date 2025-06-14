@@ -2,7 +2,8 @@
 {
     public class CourseRequirementDto
     {
-        public string CourseId { get; set; }
-        public bool IsCompleted { get; set; }
+        public string CourseCode { get; set; }
+        public string CourseName { get; set; }
+        public bool IsSatisfied { get; set; }
     }
 }
