@@ -12,7 +12,7 @@
     public class CreateServiceHoldDto
     {
         public string StudentId { get; set; }
-        public string Service { get; set; }
+        public int ServiceId { get; set; }
         public string Reason { get; set; }
     }
 

@@ -1,9 +1,11 @@
 using System;
+using System.ComponentModel.DataAnnotations;
 
 namespace ENROLLMENTSYSTEMBACKEND.Models
 {
     public class FormSubmission
     {
+        [Key]
         public string SubmissionId { get; set; } = string.Empty;
         public string StudentId { get; set; } = string.Empty;
         public string FullName { get; set; } = string.Empty;

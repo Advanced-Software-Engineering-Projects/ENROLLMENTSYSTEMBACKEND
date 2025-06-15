@@ -2,7 +2,7 @@ namespace ENROLLMENTSYSTEMBACKEND.Models
 {
     public class Student
     {
-        public string Id { get; set; }  // Primary key
+        public string Id { get; set; }  
         public string StudentId { get; set; }
         public string Name { get; set; }
         public string FirstName { get; set; }

@@ -19,7 +19,7 @@ namespace ENROLLMENTSYSTEMBACKEND.Microservices.FormsService
             });
 
             // Configure database
-            services.AddDbContext<ApplicationDbContext>(options =>
+            services.AddDbContext<EnrollmentInformationDbContext>(options =>
                 options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")));
 
             // Register repositories

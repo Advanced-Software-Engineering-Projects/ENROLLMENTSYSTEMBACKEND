@@ -10,12 +10,12 @@ namespace ENROLLMENTSYSTEMBACKEND.Services
 {
     public class GradeRecheckService : IGradeRecheckService
     {
-        private readonly ApplicationDbContext _context;
+        private readonly EnrollmentInformationDbContext _context;
         private readonly IEmailService _emailService;
         private readonly IGradeService _gradeService;
 
         public GradeRecheckService(
-            ApplicationDbContext context,
+            EnrollmentInformationDbContext context,
             IEmailService emailService,
             IGradeService gradeService)
         {

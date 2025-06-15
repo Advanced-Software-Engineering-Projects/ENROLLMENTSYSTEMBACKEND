@@ -59,7 +59,7 @@ namespace ENROLLMENTSYSTEMBACKEND.Controllers
         public async Task<IActionResult> AddHold([FromBody] CreateServiceHoldDto holdDto)
         {
             if (holdDto == null || string.IsNullOrEmpty(holdDto.StudentId) || 
-                string.IsNullOrEmpty(holdDto.Service) || string.IsNullOrEmpty(holdDto.Reason))
+                holdDto.ServiceId <= 0 || string.IsNullOrEmpty(holdDto.Reason))
             {
                 return BadRequest("Invalid hold data");
             }

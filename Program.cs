@@ -49,19 +49,7 @@ namespace ENROLLMENTSYSTEMBACKEND
             // Configure database for EnrollmentInformationDbContext (consolidated)
             builder.Services.AddDbContext<EnrollmentInformationDbContext>(options =>
                 options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-            builder.Services.AddScoped<EnrollmentInformationDbContext>();
-
-            // Remove previous EnrollmentInformation registration if present
-            // builder.Services.AddDbContext<EnrollmentInformation>(options =>
-            //     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-            // builder.Services.AddScoped<EnrollmentInformation>();
-
-            builder.Services.AddDbContext<EnrollmentInformationDbContext>(options =>
-                options.UseSqlServer(builder.Configuration.GetConnectionString("EnrollmentInformationConnection")));
-
-            builder.Services.AddDbContext<ApplicationDbContext>(options =>
-                options.UseSqlServer(builder.Configuration.GetConnectionString("ApplicationConnection")));
-
+                
             // Configure JWT authentication
             builder.Services.AddAuthentication(options =>
             {
@@ -155,6 +143,15 @@ namespace ENROLLMENTSYSTEMBACKEND
                 });
             });
 
+            // Add session support
+            builder.Services.AddDistributedMemoryCache();
+            builder.Services.AddSession(options =>
+            {
+                options.IdleTimeout = TimeSpan.FromMinutes(30);
+                options.Cookie.HttpOnly = true;
+                options.Cookie.IsEssential = true;
+            });
+
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.
@@ -168,6 +165,7 @@ namespace ENROLLMENTSYSTEMBACKEND
             app.UseCors("AllowAll");
             app.UseAuthentication();
             app.UseAuthorization();
+            app.UseSession();
             app.MapControllers();
             
             // Redirect root to Swagger UI

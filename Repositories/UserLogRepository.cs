@@ -6,9 +6,9 @@ namespace ENROLLMENTSYSTEMBACKEND.Repositories
 {
     public class UserLogRepository : IUserLogRepository
     {
-        private readonly ApplicationDbContext _context;
+        private readonly EnrollmentInformationDbContext _context;
 
-        public UserLogRepository(ApplicationDbContext context)
+        public UserLogRepository(EnrollmentInformationDbContext context)
         {
             _context = context;
         }

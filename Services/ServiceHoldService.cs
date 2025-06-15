@@ -70,7 +70,7 @@ namespace ENROLLMENTSYSTEMBACKEND.Services
             var hold = new ServiceHold
             {
                 StudentId = holdDto.StudentId,
-                Service = holdDto.Service,
+                ServiceId = holdDto.ServiceId,
                 Reason = holdDto.Reason
             };
             
@@ -179,7 +179,7 @@ namespace ENROLLMENTSYSTEMBACKEND.Services
             {
                 HoldId = hold.HoldId,
                 StudentId = hold.StudentId,
-                Service = hold.Service,
+                Service = hold.Service?.ServiceName ?? "Unknown Service",
                 Reason = hold.Reason,
                 CreatedAt = hold.CreatedAt.ToString("yyyy-MM-dd")
             };
