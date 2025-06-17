@@ -115,6 +115,7 @@ namespace ENROLLMENTSYSTEMBACKEND
             builder.Services.AddScoped<IGradeRecheckService, GradeRecheckService>();
             builder.Services.AddScoped<IEmailService, EmailService>();
             builder.Services.AddScoped<INotificationService, NotificationService>();
+            builder.Services.AddScoped<IAutoFillService, AutoFillService>();
 
             // Register HTTP clients
             builder.Services.AddHttpClient<ExternalFormIntegrationServiceClient>();

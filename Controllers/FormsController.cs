@@ -15,17 +15,20 @@ namespace ENROLLMENTSYSTEMBACKEND.Controllers
     public class FormsController : ControllerBase
     {
         private readonly IFormService _formService;
+        private readonly IAutoFillService _autoFillService;
         private readonly ExternalFormIntegrationServiceClient _externalFormClient;
         private readonly GradeRecheckServiceClient _gradeRecheckServiceClient;
         private readonly ILogger<FormsController> _logger;
 
         public FormsController(
-            IFormService formService, 
-            ExternalFormIntegrationServiceClient externalFormClient, 
+            IFormService formService,
+            IAutoFillService autoFillService,
+            ExternalFormIntegrationServiceClient externalFormClient,
             GradeRecheckServiceClient gradeRecheckServiceClient,
             ILogger<FormsController> logger)
         {
             _formService = formService;
+            _autoFillService = autoFillService;
             _externalFormClient = externalFormClient;
             _gradeRecheckServiceClient = gradeRecheckServiceClient;
             _logger = logger;
@@ -186,6 +189,67 @@ namespace ENROLLMENTSYSTEMBACKEND.Controllers
             catch (System.Exception ex)
             {
                 return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
+        }
+
+        [HttpGet("auto-fill/{formType}")]
+        public async Task<ActionResult<FormAutoFillDataDto>> GetAutoFillData(string formType)
+        {
+            try
+            {
+                var studentId = User.FindFirst("sub")?.Value;
+                if (string.IsNullOrEmpty(studentId))
+                {
+                    return Unauthorized("Student ID not found in token");
+                }
+
+                var autoFillData = await _autoFillService.GetAutoFillDataAsync(studentId, formType);
+                return Ok(autoFillData);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting auto-fill data for form type {FormType}", formType);
+                return StatusCode(500, "An error occurred while getting auto-fill data");
+            }
+        }
+
+        [HttpGet("field-mappings/{formType}")]
+        public async Task<ActionResult<Dictionary<string, string>>> GetFormFieldMappings(string formType)
+        {
+            try
+            {
+                var mappings = await _autoFillService.GetFormFieldMappingsAsync(formType);
+                return Ok(mappings);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting field mappings for form type {FormType}", formType);
+                return StatusCode(500, "An error occurred while getting field mappings");
+            }
+        }
+
+        [HttpPost("validate-auto-fill")]
+        public async Task<ActionResult<bool>> ValidateAutoFillData([FromBody] FormAutoFillDataDto data)
+        {
+            try
+            {
+                var studentId = User.FindFirst("sub")?.Value;
+                if (string.IsNullOrEmpty(studentId))
+                {
+                    return Unauthorized("Student ID not found in token");
+                }
+
+                var isValid = await _autoFillService.ValidateAutoFillDataAsync(studentId, data);
+                return Ok(isValid);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error validating auto-fill data");
+                return StatusCode(500, "An error occurred while validating auto-fill data");
             }
         }
     }
