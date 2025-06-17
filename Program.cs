@@ -117,10 +117,8 @@ namespace ENROLLMENTSYSTEMBACKEND
             builder.Services.AddScoped<INotificationService, NotificationService>();
 
             // Register HTTP clients
-            builder.Services.AddHttpClient<ExternalFormIntegrationServiceClient>(client =>
-            {
-                client.BaseAddress = new Uri(builder.Configuration["ServiceEndpoints:FormsService"] ?? "http://forms-service/api/");
-            });
+            builder.Services.AddHttpClient<ExternalFormIntegrationServiceClient>();
+            builder.Services.AddScoped<ExternalFormIntegrationServiceClient>();
 
             builder.Services.AddHttpClient<GradeRecheckServiceClient>(client =>
             {

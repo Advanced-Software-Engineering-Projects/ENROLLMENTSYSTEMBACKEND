@@ -17,6 +17,7 @@ namespace ENROLLMENTSYSTEMBACKEND.Repositories
         {
             return await _context.Courses
                 .Include(c => c.Prerequisites)
+                    .ThenInclude(p => p.PrerequisiteCourse)
                 .FirstOrDefaultAsync(c => c.CourseId == courseId);
         }
 
@@ -24,6 +25,7 @@ namespace ENROLLMENTSYSTEMBACKEND.Repositories
         {
             return await _context.Courses
                 .Include(c => c.Prerequisites)
+                    .ThenInclude(p => p.PrerequisiteCourse)
                 .FirstOrDefaultAsync(c => c.CourseCode == courseCode);
         }
 
@@ -31,6 +33,7 @@ namespace ENROLLMENTSYSTEMBACKEND.Repositories
         {
             return await _context.Courses
                 .Include(c => c.Prerequisites)
+                    .ThenInclude(p => p.PrerequisiteCourse)
                 .ToListAsync();
         }
 
@@ -38,6 +41,7 @@ namespace ENROLLMENTSYSTEMBACKEND.Repositories
         {
             return await _context.Courses
                 .Include(c => c.Prerequisites)
+                    .ThenInclude(p => p.PrerequisiteCourse)
                 .Where(c => c.Program == program)
                 .ToListAsync();
         }
@@ -46,6 +50,7 @@ namespace ENROLLMENTSYSTEMBACKEND.Repositories
         {
             return await _context.Courses
                 .Include(c => c.Prerequisites)
+                    .ThenInclude(p => p.PrerequisiteCourse)
                 .Where(c => c.Program == program && c.Year == year)
                 .ToListAsync();
         }
@@ -77,6 +82,9 @@ namespace ENROLLMENTSYSTEMBACKEND.Repositories
                 existing.Year = course.Year;
                 existing.DueDate = course.DueDate;
                 existing.IsActive = course.IsActive;
+
+                // Update prerequisites
+                _context.CoursePrerequisites.RemoveRange(existing.Prerequisites);
                 existing.Prerequisites = course.Prerequisites;
 
                 await _context.SaveChangesAsync();
@@ -85,9 +93,13 @@ namespace ENROLLMENTSYSTEMBACKEND.Repositories
 
         public async Task DeleteCourseAsync(string courseId)
         {
-            var course = await _context.Courses.FindAsync(courseId);
+            var course = await _context.Courses
+                .Include(c => c.Prerequisites)
+                .FirstOrDefaultAsync(c => c.CourseId == courseId);
+                
             if (course != null)
             {
+                _context.CoursePrerequisites.RemoveRange(course.Prerequisites);
                 _context.Courses.Remove(course);
                 await _context.SaveChangesAsync();
             }

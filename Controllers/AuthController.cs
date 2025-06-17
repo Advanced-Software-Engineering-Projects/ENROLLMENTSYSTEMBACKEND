@@ -44,6 +44,55 @@ namespace ENROLLMENTSYSTEMBACKEND.Controllers
             return Ok(new { Message = "Login successful", Token = token });
         }
 
+        [HttpPost("validate-token")]
+        public IActionResult ValidateToken([FromBody] TokenValidationDto request)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(request.Token))
+                {
+                    return BadRequest(new { error = "Token is required." });
+                }
+
+                var tokenHandler = new JwtSecurityTokenHandler();
+                var key = Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]);
+
+                try
+                {
+                    tokenHandler.ValidateToken(request.Token, new TokenValidationParameters
+                    {
+                        ValidateIssuerSigningKey = true,
+                        IssuerSigningKey = new SymmetricSecurityKey(key),
+                        ValidateIssuer = true,
+                        ValidIssuer = _configuration["Jwt:Issuer"],
+                        ValidateAudience = true,
+                        ValidAudience = _configuration["Jwt:Audience"],
+                        ValidateLifetime = true,
+                        ClockSkew = TimeSpan.Zero
+                    }, out SecurityToken validatedToken);
+
+                    return Ok(new { message = "Token is valid." });
+                }
+                catch (SecurityTokenExpiredException)
+                {
+                    return Unauthorized(new { error = "Token has expired." });
+                }
+                catch (SecurityTokenInvalidSignatureException)
+                {
+                    return Unauthorized(new { error = "Token signature is invalid." });
+                }
+                catch (Exception)
+                {
+                    return Unauthorized(new { error = "Token is invalid." });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error validating token");
+                return StatusCode(500, new { error = "An error occurred while validating the token." });
+            }
+        }
+
         private string GenerateJwtToken(User user)
         {
             var claims = new[]

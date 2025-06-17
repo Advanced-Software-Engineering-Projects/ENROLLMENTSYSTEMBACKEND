@@ -2,6 +2,7 @@
 using ENROLLMENTSYSTEMBACKEND.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using Services;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -15,14 +16,19 @@ namespace ENROLLMENTSYSTEMBACKEND.Controllers
     {
         private readonly IFormService _formService;
         private readonly ExternalFormIntegrationServiceClient _externalFormClient;
-
         private readonly GradeRecheckServiceClient _gradeRecheckServiceClient;
+        private readonly ILogger<FormsController> _logger;
 
-        public FormsController(IFormService formService, ExternalFormIntegrationServiceClient externalFormClient, GradeRecheckServiceClient gradeRecheckServiceClient)
+        public FormsController(
+            IFormService formService, 
+            ExternalFormIntegrationServiceClient externalFormClient, 
+            GradeRecheckServiceClient gradeRecheckServiceClient,
+            ILogger<FormsController> logger)
         {
             _formService = formService;
             _externalFormClient = externalFormClient;
             _gradeRecheckServiceClient = gradeRecheckServiceClient;
+            _logger = logger;
         }
 
         //Gets all form submissions for a student with optional filtering by form type.
@@ -47,18 +53,38 @@ namespace ENROLLMENTSYSTEMBACKEND.Controllers
         }
 
         // New endpoint to apply for external form
-        [HttpPost("external/apply")]
-        public async Task<IActionResult> ApplyForExternalForm([FromBody] FormApplicationDto application)
+        [HttpPost("apply")]
+        public async Task<IActionResult> ApplyForForm([FromBody] FormApplicationDto application)
         {
-            var response = await _externalFormClient.ApplyForFormAsync(application.StudentId, application.FormType);
-            if (!response.IsSuccessStatusCode)
+            try
             {
-                return StatusCode((int)response.StatusCode, "Failed to apply for external form");
-            }
-            var content = await response.Content.ReadAsStringAsync();
-            return Ok(content);
-        }
+                var formData = new FormDataDto
+                {
+                    FormType = application.FormType,
+                    Fields = new Dictionary<string, string>
+                    {
+                        { "StudentId", application.StudentId },
+                        { "FormType", application.FormType }
+                    },
+                    Attachments = new List<string>(),
+                    Status = "Pending",
+                    Comments = "Form submitted"
+                };
 
+                var result = await _externalFormClient.ApplyForFormAsync(
+                    application.StudentId,
+                    application.FormType,
+                    formData
+                );
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error applying for form");
+                return StatusCode(500, "An error occurred while processing your request");
+            }
+        }
 
         //Gets all form submissions for a student.
         [HttpGet("all")]

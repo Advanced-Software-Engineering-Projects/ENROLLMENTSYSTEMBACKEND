@@ -23,6 +23,36 @@ namespace ENROLLMENTSYSTEMBACKEND.Services
             _prerequisiteRepository = prerequisiteRepository;
         }
 
+        private CourseDto MapToDto(Course course)
+        {
+            return new CourseDto
+            {
+                CourseId = course.CourseId,
+                CourseCode = course.CourseCode,
+                CourseName = course.CourseName,
+                Name = course.CourseName,
+                Program = course.Program,
+                Year = course.Year,
+                Description = course.Description,
+                Prerequisites = course.Prerequisites.Select(p => new CoursePrerequisiteDto
+                {
+                    Id = p.Id,
+                    CourseId = p.CourseId,
+                    PrerequisiteCourseId = p.PrerequisiteCourseId,
+                    PrerequisiteCourse = new CourseDto
+                    {
+                        CourseId = p.PrerequisiteCourse.CourseId,
+                        CourseCode = p.PrerequisiteCourse.CourseCode,
+                        CourseName = p.PrerequisiteCourse.CourseName,
+                        Name = p.PrerequisiteCourse.CourseName,
+                        Program = p.PrerequisiteCourse.Program,
+                        Year = p.PrerequisiteCourse.Year,
+                        Description = p.PrerequisiteCourse.Description
+                    }
+                }).ToList()
+            };
+        }
+
         public async Task<IEnumerable<CourseDto>> GetEnrolledCoursesAsync(string studentId)
         {
             var enrollments = await _enrollmentRepository.GetEnrollmentsByStudentIdAsync(studentId);
@@ -31,13 +61,7 @@ namespace ENROLLMENTSYSTEMBACKEND.Services
             var allCourses = await _courseRepository.GetAllCoursesAsync();
             var enrolledCourses = allCourses.Where(c => courseCodes.Contains(c.CourseCode));
 
-            return enrolledCourses.Select(c => new CourseDto
-            {
-                CourseCode = c.CourseCode,
-                CourseName = c.CourseName,
-                Description = c.Description,
-                Prerequisites = c.Prerequisites
-            }).ToList();
+            return enrolledCourses.Select(MapToDto).ToList();
         }
 
         public async Task<IEnumerable<CourseDto>> GetDroppedCoursesAsync(string studentId)
@@ -48,13 +72,7 @@ namespace ENROLLMENTSYSTEMBACKEND.Services
             var allCourses = await _courseRepository.GetAllCoursesAsync();
             var droppedCourses = allCourses.Where(c => courseCodes.Contains(c.CourseCode));
 
-            return droppedCourses.Select(c => new CourseDto
-            {
-                CourseCode = c.CourseCode,
-                CourseName = c.CourseName,
-                Description = c.Description,
-                Prerequisites = c.Prerequisites
-            }).ToList();
+            return droppedCourses.Select(MapToDto).ToList();
         }
 
         public async Task<IEnumerable<CourseDto>> GetAvailableCoursesAsync(string studentId, string program)
@@ -71,19 +89,18 @@ namespace ENROLLMENTSYSTEMBACKEND.Services
             var availableCourses = allCourses
                 .Where(c => c.Program == program && !enrolledCourseCodes.Contains(c.CourseCode));
 
-            return availableCourses.Select(c => new CourseDto
-            {
-                CourseCode = c.CourseCode,
-                CourseName = c.CourseName,
-                Description = c.Description,
-                Prerequisites = c.Prerequisites
-            }).ToList();
+            return availableCourses.Select(MapToDto).ToList();
         }
 
         public async Task<IEnumerable<string>> GetPrerequisiteGraphAsync(string courseCode)
         {
-            var prerequisites = await _prerequisiteRepository.GetPrerequisitesAsync(courseCode);
-            return prerequisites.Select(p => p.PrerequisiteCourseCode);
+            var course = await _courseRepository.GetCourseByCodeAsync(courseCode);
+            if (course == null)
+            {
+                return Enumerable.Empty<string>();
+            }
+
+            return course.Prerequisites.Select(p => p.PrerequisiteCourse.CourseCode);
         }
 
         public async Task EnrollAsync(string studentId, string courseCode, string semester)
@@ -106,9 +123,11 @@ namespace ENROLLMENTSYSTEMBACKEND.Services
                 throw new InvalidOperationException("Already enrolled in this course.");
             }
 
-            var prerequisites = await _prerequisiteRepository.GetPrerequisitesAsync(courseCode);
             var completedCourses = enrollments.Where(e => e.Status == "Completed").Select(e => e.CourseCode).ToList();
-            var unmetPrerequisites = prerequisites.Where(p => !completedCourses.Contains(p.PrerequisiteCourseCode)).ToList();
+            var unmetPrerequisites = course.Prerequisites
+                .Where(p => !completedCourses.Contains(p.PrerequisiteCourse.CourseCode))
+                .ToList();
+
             if (unmetPrerequisites.Any())
             {
                 throw new InvalidOperationException("Prerequisites not met.");

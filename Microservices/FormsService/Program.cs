@@ -1,68 +1,59 @@
-using ENROLLMENTSYSTEMBACKEND.Data;
-using ENROLLMENTSYSTEMBACKEND.Repositories;
-using ENROLLMENTSYSTEMBACKEND.Services;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
 
 namespace ENROLLMENTSYSTEMBACKEND.Microservices.FormsService
 {
-    public class FormsServiceStartup
+    public class Program
     {
-        public void ConfigureServices(IServiceCollection services, IConfiguration configuration)
+        public static void Main(string[] args)
         {
-            // Add services to the container
-            services.AddControllers();
-            services.AddEndpointsApiExplorer();
-            services.AddSwaggerGen(c =>
+            var builder = WebApplication.CreateBuilder(args);
+
+            // Add services to the container.
+            builder.Services.AddControllers();
+            builder.Services.AddEndpointsApiExplorer();
+            builder.Services.AddSwaggerGen(c =>
             {
-                c.SwaggerDoc("v1", new OpenApiInfo { Title = "Student Forms API", Version = "v1" });
+                c.SwaggerDoc("v1", new OpenApiInfo { Title = "Forms Service API", Version = "v1" });
             });
 
-            // Configure database
-            services.AddDbContext<EnrollmentInformationDbContext>(options =>
-                options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")));
-
-            // Register repositories
-            services.AddScoped<IFormRepository, FormRepository>();
-            services.AddScoped<IStudentRepository, StudentRepository>();
-            services.AddScoped<IGradeRepository, GradeRepository>();
-
-            // Register services
-            services.AddScoped<INotificationService, NotificationService>();
-            services.AddScoped<IEmailService, EmailService>();
-
             // Add CORS
-            services.AddCors(options =>
+            builder.Services.AddCors(options =>
             {
-                options.AddPolicy("AllowAll", builder =>
-                {
-                    builder.AllowAnyOrigin()
-                           .AllowAnyMethod()
-                           .AllowAnyHeader();
-                });
+                options.AddPolicy("AllowAll",
+                    builder =>
+                    {
+                        builder.AllowAnyOrigin()
+                               .AllowAnyMethod()
+                               .AllowAnyHeader();
+                    });
             });
 
             // Add health checks
-            services.AddHealthChecks();
-        }
+            builder.Services.AddHealthChecks();
 
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
-        {
-            // Configure the HTTP request pipeline
-            if (env.IsDevelopment())
+            var app = builder.Build();
+
+            // Configure the HTTP request pipeline.
+            if (app.Environment.IsDevelopment())
             {
                 app.UseSwagger();
-                app.UseSwaggerUI();
+                app.UseSwaggerUI(c =>
+                {
+                    c.SwaggerEndpoint("/swagger/v1/swagger.json", "Forms Service API V1");
+                });
             }
 
             app.UseHttpsRedirection();
             app.UseCors("AllowAll");
             app.UseAuthorization();
-            app.UseEndpoints(endpoints =>
-            {
-                endpoints.MapControllers();
-                endpoints.MapHealthChecks("/health");
-            });
+            app.MapControllers();
+            app.MapHealthChecks("/health");
+
+            app.Run();
         }
     }
-}
+} 

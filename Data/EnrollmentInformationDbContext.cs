@@ -36,6 +36,7 @@ namespace ENROLLMENTSYSTEMBACKEND.Data
         public DbSet<Hold> Holds { get; set; }
         public DbSet<PendingRequest> PendingRequests { get; set; }
         public DbSet<Service> Services { get; set; }
+        public DbSet<CoursePrerequisite> CoursePrerequisites { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -377,6 +378,19 @@ namespace ENROLLMENTSYSTEMBACKEND.Data
                 .WithMany()
                 .HasForeignKey(p => p.CourseCode)
                 .OnDelete(DeleteBehavior.NoAction);
+
+            // Configure Course and CoursePrerequisite relationships
+            modelBuilder.Entity<Course>()
+                .HasMany(c => c.Prerequisites)
+                .WithOne(p => p.Course)
+                .HasForeignKey(p => p.CourseId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<CoursePrerequisite>()
+                .HasOne(p => p.PrerequisiteCourse)
+                .WithMany()
+                .HasForeignKey(p => p.PrerequisiteCourseId)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

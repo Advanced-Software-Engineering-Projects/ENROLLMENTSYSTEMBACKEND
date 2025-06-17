@@ -23,6 +23,36 @@ namespace ENROLLMENTSYSTEMBACKEND.Services
             _prerequisiteRepository = prerequisiteRepository;
         }
 
+        private CourseDto MapToDto(Course course)
+        {
+            return new CourseDto
+            {
+                CourseId = course.CourseId,
+                CourseCode = course.CourseCode,
+                CourseName = course.CourseName,
+                Name = course.CourseName,
+                Program = course.Program,
+                Year = course.Year,
+                Description = course.Description,
+                Prerequisites = course.Prerequisites.Select(p => new CoursePrerequisiteDto
+                {
+                    Id = p.Id,
+                    CourseId = p.CourseId,
+                    PrerequisiteCourseId = p.PrerequisiteCourseId,
+                    PrerequisiteCourse = new CourseDto
+                    {
+                        CourseId = p.PrerequisiteCourse.CourseId,
+                        CourseCode = p.PrerequisiteCourse.CourseCode,
+                        CourseName = p.PrerequisiteCourse.CourseName,
+                        Name = p.PrerequisiteCourse.CourseName,
+                        Program = p.PrerequisiteCourse.Program,
+                        Year = p.PrerequisiteCourse.Year,
+                        Description = p.PrerequisiteCourse.Description
+                    }
+                }).ToList()
+            };
+        }
+
         public async Task<CourseDto?> GetCourseByIdAsync(string courseId)
         {
             var course = await _courseRepository.GetCourseByIdAsync(courseId);
@@ -31,48 +61,19 @@ namespace ENROLLMENTSYSTEMBACKEND.Services
                 return null;
             }
 
-            return new CourseDto
-            {
-                CourseId = course.CourseId,
-                CourseCode = course.CourseCode,
-                CourseName = course.CourseName,
-                Program = course.Program,
-                Year = course.Year,
-                Description = course.Description,
-                Prerequisites = course.Prerequisites
-            };
+            return MapToDto(course);
         }
 
         public async Task<List<CourseDto>> GetCoursesByProgramAsync(string program)
         {
             var courses = await _courseRepository.GetCoursesByProgramAsync(program);
-            
-            return courses.Select(c => new CourseDto
-            {
-                CourseId = c.CourseId,
-                CourseCode = c.CourseCode,
-                CourseName = c.CourseName,
-                Program = c.Program,
-                Year = c.Year,
-                Description = c.Description,
-                Prerequisites = c.Prerequisites
-            }).ToList();
+            return courses.Select(MapToDto).ToList();
         }
 
         public async Task<List<CourseDto>> GetCoursesByProgramAndYearAsync(string program, int year)
         {
             var courses = await _courseRepository.GetCoursesByProgramAndYearAsync(program, year);
-            
-            return courses.Select(c => new CourseDto
-            {
-                CourseId = c.CourseId,
-                CourseCode = c.CourseCode,
-                CourseName = c.CourseName,
-                Program = c.Program,
-                Year = c.Year,
-                Description = c.Description,
-                Prerequisites = c.Prerequisites
-            }).ToList();
+            return courses.Select(MapToDto).ToList();
         }
 
         public async Task<bool> RegisterCourseAsync(CourseRegistrationDto registrationDto)
