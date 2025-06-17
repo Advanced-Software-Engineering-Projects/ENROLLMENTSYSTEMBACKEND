@@ -233,6 +233,7 @@ namespace ENROLLMENTSYSTEMBACKEND.Data
                 .ToTable("Enrollments")
                 .HasKey(e => new { e.StudentId, e.CourseId });
 
+
             modelBuilder.Entity<PaymentRecord>()
                 .ToTable("PaymentRecords")
                 .HasKey(p => new { p.StudentId, p.FeeId });

@@ -55,8 +55,29 @@ namespace ENROLLMENTSYSTEMBACKEND.Services
 
         public async Task<IEnumerable<CourseDto>> GetEnrolledCoursesAsync(string studentId)
         {
+            if (string.IsNullOrEmpty(studentId))
+            {
+                throw new ArgumentException("Student ID cannot be null or empty", nameof(studentId));
+            }
+
+            var student = await _studentRepository.GetStudentByIdAsync(studentId);
+            if (student == null)
+            {
+                throw new InvalidOperationException("Student not found");
+            }
+
             var enrollments = await _enrollmentRepository.GetEnrollmentsByStudentIdAsync(studentId);
+            if (!enrollments.Any())
+            {
+                return new List<CourseDto>();
+            }
+
             var enrolledEnrollments = enrollments.Where(e => e.Status == "Enrolled").ToList();
+            if (!enrolledEnrollments.Any())
+            {
+                return new List<CourseDto>();
+            }
+
             var courseCodes = enrolledEnrollments.Select(e => e.CourseCode).ToList();
             var allCourses = await _courseRepository.GetAllCoursesAsync();
             var enrolledCourses = allCourses.Where(c => courseCodes.Contains(c.CourseCode));
@@ -66,8 +87,29 @@ namespace ENROLLMENTSYSTEMBACKEND.Services
 
         public async Task<IEnumerable<CourseDto>> GetDroppedCoursesAsync(string studentId)
         {
+            if (string.IsNullOrEmpty(studentId))
+            {
+                throw new ArgumentException("Student ID cannot be null or empty", nameof(studentId));
+            }
+
+            var student = await _studentRepository.GetStudentByIdAsync(studentId);
+            if (student == null)
+            {
+                throw new InvalidOperationException("Student not found");
+            }
+
             var enrollments = await _enrollmentRepository.GetEnrollmentsByStudentIdAsync(studentId);
+            if (!enrollments.Any())
+            {
+                return new List<CourseDto>();
+            }
+
             var droppedEnrollments = enrollments.Where(e => e.Status == "Dropped").ToList();
+            if (!droppedEnrollments.Any())
+            {
+                return new List<CourseDto>();
+            }
+
             var courseCodes = droppedEnrollments.Select(e => e.CourseCode).ToList();
             var allCourses = await _courseRepository.GetAllCoursesAsync();
             var droppedCourses = allCourses.Where(c => courseCodes.Contains(c.CourseCode));
@@ -77,17 +119,43 @@ namespace ENROLLMENTSYSTEMBACKEND.Services
 
         public async Task<IEnumerable<CourseDto>> GetAvailableCoursesAsync(string studentId, string program)
         {
-            var student = await _studentRepository.GetStudentByIdAsync(studentId);
-            if (student == null || student.Program != program)
+            if (string.IsNullOrEmpty(studentId))
             {
-                throw new InvalidOperationException("Student not found or program mismatch.");
+                throw new ArgumentException("Student ID cannot be null or empty", nameof(studentId));
+            }
+
+            if (string.IsNullOrEmpty(program))
+            {
+                throw new ArgumentException("Program cannot be null or empty", nameof(program));
+            }
+
+            var student = await _studentRepository.GetStudentByIdAsync(studentId);
+            if (student == null)
+            {
+                throw new InvalidOperationException("Student not found");
+            }
+
+            if (student.Program != program)
+            {
+                throw new InvalidOperationException($"Student is not enrolled in program: {program}");
             }
 
             var allCourses = await _courseRepository.GetAllCoursesAsync();
+            if (!allCourses.Any())
+            {
+                return new List<CourseDto>();
+            }
+
             var enrollments = await _enrollmentRepository.GetEnrollmentsByStudentIdAsync(studentId);
-            var enrolledCourseCodes = enrollments.Where(e => e.Status == "Enrolled").Select(e => e.CourseCode).ToList();
+            var enrolledCourseCodes = enrollments
+                .Where(e => e.Status == "Enrolled" || e.Status == "Completed")
+                .Select(e => e.CourseCode)
+                .ToList();
+
             var availableCourses = allCourses
-                .Where(c => c.Program == program && !enrolledCourseCodes.Contains(c.CourseCode));
+                .Where(c => c.Program == program && 
+                           c.IsActive && 
+                           !enrolledCourseCodes.Contains(c.CourseCode));
 
             return availableCourses.Select(MapToDto).ToList();
         }

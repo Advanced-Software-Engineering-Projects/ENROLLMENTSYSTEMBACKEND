@@ -13,6 +13,8 @@ namespace ENROLLMENTSYSTEMBACKEND.Models
 
         public int TotalCredits { get; set; }
         public int RequiredCredits { get; set; }
+        
+        [NotMapped]
         public List<string> RequiredCourses { get; set; } = new List<string>();
     }
 }

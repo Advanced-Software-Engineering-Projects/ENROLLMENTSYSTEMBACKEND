@@ -25,7 +25,16 @@ namespace ENROLLMENTSYSTEMBACKEND.Services
 
         public async Task<List<FormSubmissionDto>> GetFormsAsync(string? studentId, string? formType)
         {
-            var forms = await _formSubmissionRepository.GetFormSubmissionsByStudentIdAsync(studentId ?? string.Empty);
+            if (string.IsNullOrEmpty(studentId))
+            {
+                throw new InvalidOperationException("Student ID cannot be null or empty.");
+            }
+
+            var forms = await _formSubmissionRepository.GetFormSubmissionsByStudentIdAsync(studentId);
+            if (forms == null || !forms.Any())
+            {
+                return new List<FormSubmissionDto>();
+            }
             
             if (!string.IsNullOrEmpty(formType))
                 forms = forms.FindAll(f => f.FormType.Equals(formType, StringComparison.OrdinalIgnoreCase));
@@ -43,7 +52,7 @@ namespace ENROLLMENTSYSTEMBACKEND.Services
         {
             var form = await _formSubmissionRepository.GetFormSubmissionByIdAsync(formId);
             if (form == null)
-                throw new Exception($"Form with ID {formId} not found");
+                throw new InvalidOperationException($"Form with ID {formId} not found");
                 
             return _formConfigurationService.MapToFormSubmissionDto(form);
         }
@@ -68,7 +77,7 @@ namespace ENROLLMENTSYSTEMBACKEND.Services
         {
             var form = await _formSubmissionRepository.GetFormSubmissionByIdAsync(updateStatusDto.SubmissionId);
             if (form == null)
-                throw new Exception($"Form with ID {updateStatusDto.SubmissionId} not found");
+                throw new InvalidOperationException($"Form with ID {updateStatusDto.SubmissionId} not found");
                 
             form.Status = updateStatusDto.Status;
             await _formSubmissionRepository.UpdateFormSubmissionAsync(form);
@@ -78,7 +87,13 @@ namespace ENROLLMENTSYSTEMBACKEND.Services
 
         public async Task<List<FormSubmission>> GetFormsAsync(string studentId)
         {
-            return await _formSubmissionRepository.GetFormSubmissionsByStudentIdAsync(studentId);
+            if (string.IsNullOrEmpty(studentId))
+            {
+                throw new ArgumentException("Student ID cannot be null or empty", nameof(studentId));
+            }
+
+            var forms = await _formSubmissionRepository.GetFormSubmissionsByStudentIdAsync(studentId);
+            return forms ?? new List<FormSubmission>();
         }
 
         public async Task<FormSubmission> SubmitFormAsync(FormSubmissionDto formDto)
@@ -133,9 +148,18 @@ namespace ENROLLMENTSYSTEMBACKEND.Services
 
         public async Task<List<FormSubmissionDto>> GetFormSubmissionsByStudentIdAsync(string studentId)
         {
-            var forms = await _formSubmissionRepository.GetFormSubmissionsByStudentIdAsync(studentId);
-            var formDtos = new List<FormSubmissionDto>();
+            if (string.IsNullOrEmpty(studentId))
+            {
+                throw new ArgumentException("Student ID cannot be null or empty", nameof(studentId));
+            }
 
+            var forms = await _formSubmissionRepository.GetFormSubmissionsByStudentIdAsync(studentId);
+            if (forms == null || !forms.Any())
+            {
+                return new List<FormSubmissionDto>();
+            }
+
+            var formDtos = new List<FormSubmissionDto>();
             foreach (var form in forms)
             {
                 formDtos.Add(_formConfigurationService.MapToFormSubmissionDto(form));
@@ -144,7 +168,7 @@ namespace ENROLLMENTSYSTEMBACKEND.Services
             return formDtos;
         }
 
-        public async Task<int> CreateFormSubmissionAsync(FormSubmissionDto formDto)
+        public async Task<bool> CreateFormSubmissionAsync(FormSubmissionDto formDto)
         {
             var form = new FormSubmission
             {
@@ -179,10 +203,10 @@ namespace ENROLLMENTSYSTEMBACKEND.Services
                 ApplyingFor = formDto.ApplyingFor
             };
 
-            await _formSubmissionRepository.CreateFormSubmissionAsync(form);
+            var result = await _formSubmissionRepository.CreateFormSubmissionAsync(form);
             await _formConfigurationService.SendFormSubmissionEmailAsync(formDto.FormType, form.SubmissionId);
 
-            return Convert.ToInt32(form.SubmissionId);
+            return result;
         }
     }
 }

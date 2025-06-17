@@ -66,7 +66,28 @@ namespace ENROLLMENTSYSTEMBACKEND
                     ValidateIssuerSigningKey = true,
                     ValidIssuer = builder.Configuration["Jwt:Issuer"],
                     ValidAudience = builder.Configuration["Jwt:Audience"],
-                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"])),
+                    ClockSkew = TimeSpan.Zero // Reduce clock skew to prevent timing issues
+                };
+
+                // Add event handlers for better debugging
+                options.Events = new JwtBearerEvents
+                {
+                    OnAuthenticationFailed = context =>
+                    {
+                        Console.WriteLine($"JWT Authentication failed: {context.Exception.Message}");
+                        return Task.CompletedTask;
+                    },
+                    OnTokenValidated = context =>
+                    {
+                        Console.WriteLine("JWT Token validated successfully");
+                        return Task.CompletedTask;
+                    },
+                    OnChallenge = context =>
+                    {
+                        Console.WriteLine($"JWT Challenge: {context.Error} - {context.ErrorDescription}");
+                        return Task.CompletedTask;
+                    }
                 };
             });
 
@@ -136,6 +157,13 @@ namespace ENROLLMENTSYSTEMBACKEND
                 client.BaseAddress = new Uri(builder.Configuration["Microservices:FormsServiceUrl"]);
             });
 
+            // Register HoldManagementServiceClient
+            builder.Services.AddHttpClient<HoldManagementServiceClient>(client =>
+            {
+                client.BaseAddress = new Uri(builder.Configuration["ServiceEndpoints:HoldManagementService"] ?? "http://localhost:5003/api/");
+            });
+            builder.Services.AddScoped<HoldManagementServiceClient>();
+
             // Add CORS
             builder.Services.AddCors(options =>
             {
@@ -164,6 +192,28 @@ namespace ENROLLMENTSYSTEMBACKEND
                 app.UseSwagger();
                 app.UseSwaggerUI();
             }
+
+            // Add global exception handling middleware
+            app.UseExceptionHandler(errorApp =>
+            {
+                errorApp.Run(async context =>
+                {
+                    context.Response.StatusCode = 500;
+                    context.Response.ContentType = "application/json";
+
+                    var exceptionHandlerPathFeature = context.Features.Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerPathFeature>();
+                    if (exceptionHandlerPathFeature?.Error != null)
+                    {
+                        var errorResponse = new
+                        {
+                            Message = "An unexpected error occurred.",
+                            Detail = exceptionHandlerPathFeature.Error.Message
+                        };
+                        var errorJson = System.Text.Json.JsonSerializer.Serialize(errorResponse);
+                        await context.Response.WriteAsync(errorJson);
+                    }
+                });
+            });
 
             app.UseHttpsRedirection();
             app.UseCors("AllowAll");

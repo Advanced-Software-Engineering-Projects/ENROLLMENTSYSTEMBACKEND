@@ -25,60 +25,142 @@ namespace ENROLLMENTSYSTEMBACKEND.Services
 
         public async Task<DashboardMetricsDto> GetDashboardMetricsAsync()
         {
-            // Placeholder implementation - can be extended to aggregate real data
-            return await Task.FromResult(new DashboardMetricsDto
+            try
             {
-                RequestId = "SampleRequestId",
-                StudentId = "SampleStudentId",
-                CourseId = "SampleCourseId",
-                RequestDate = DateTime.UtcNow
-            });
+                var pendingRequests = await _pendingRequestRepository.GetPendingRequestsAsync();
+                var enrollments = await _enrollmentRepository.GetAllEnrollmentsAsync();
+                
+                var totalStudents = enrollments.Select(e => e.StudentId).Distinct().Count();
+                var totalEnrollments = enrollments.Count;
+                var completedEnrollments = enrollments.Count(e => e.Status == "Completed");
+                var pendingRequestsCount = pendingRequests?.Count ?? 0;
+
+                return new DashboardMetricsDto
+                {
+                    TotalStudents = totalStudents,
+                    TotalEnrollments = totalEnrollments,
+                    CompletedEnrollments = completedEnrollments,
+                    PendingRequests = pendingRequestsCount,
+                    CompletionRate = totalEnrollments > 0 ? (double)completedEnrollments / totalEnrollments * 100 : 0,
+                    LastUpdated = DateTime.UtcNow
+                };
+            }
+            catch (Exception)
+            {
+                // Return default metrics if there's an error
+                return new DashboardMetricsDto
+                {
+                    TotalStudents = 0,
+                    TotalEnrollments = 0,
+                    CompletedEnrollments = 0,
+                    PendingRequests = 0,
+                    CompletionRate = 0,
+                    LastUpdated = DateTime.UtcNow
+                };
+            }
         }
 
         public async Task<List<PendingRequestDto>> GetPendingRequestsAsync()
         {
-            var pendingRequests = await _pendingRequestRepository.GetPendingRequestsAsync();
-            return pendingRequests.Select(pr => new PendingRequestDto
+            try
             {
-                RequestId = pr.Id,
-                StudentId = pr.StudentId,
-                CourseId = pr.CourseCode,
-                RequestDate = pr.Date
-            }).ToList();
+                var pendingRequests = await _pendingRequestRepository.GetPendingRequestsAsync();
+                if (pendingRequests == null || !pendingRequests.Any())
+                {
+                    return new List<PendingRequestDto>();
+                }
+
+                return pendingRequests.Select(pr => new PendingRequestDto
+                {
+                    RequestId = pr.Id,
+                    StudentId = pr.StudentId,
+                    CourseId = pr.CourseCode,
+                    RequestType = pr.RequestType,
+                    RequestDate = pr.Date,
+                    Status = "Pending",
+                    Priority = GetRequestPriority(pr.RequestType)
+                }).OrderByDescending(r => r.Priority).ThenBy(r => r.RequestDate).ToList();
+            }
+            catch (Exception)
+            {
+                return new List<PendingRequestDto>();
+            }
+        }
+
+        private int GetRequestPriority(string requestType)
+        {
+            return requestType?.ToLower() switch
+            {
+                "enrollment" => 3,
+                "grade_change" => 2,
+                "withdrawal" => 1,
+                _ => 0
+            };
         }
 
         public async Task<List<EnrollmentDataDto>> GetEnrollmentDataAsync()
         {
-            var enrollmentCounts = await _enrollmentRepository.GetEnrollmentCountsBySemesterAsync();
-            return enrollmentCounts.Select(ec => new EnrollmentDataDto
+            try
             {
-                Semester = ec.Item1,
-                EnrollmentCount = ec.Item2
-            }).ToList();
+                var enrollmentCounts = await _enrollmentRepository.GetEnrollmentCountsBySemesterAsync();
+                if (enrollmentCounts == null || !enrollmentCounts.Any())
+                {
+                    return new List<EnrollmentDataDto>();
+                }
+
+                return enrollmentCounts.Select(ec => new EnrollmentDataDto
+                {
+                    Semester = ec.Item1 ?? "Unknown",
+                    EnrollmentCount = ec.Item2,
+                    ActiveEnrollments = ec.Item2, // Assuming all are active for now
+                    CompletedEnrollments = 0 // This would need additional data
+                }).OrderBy(ed => ed.Semester).ToList();
+            }
+            catch (Exception)
+            {
+                return new List<EnrollmentDataDto>();
+            }
         }
 
         public async Task<List<CompletionRateDataDto>> GetCompletionRateDataAsync()
         {
-            var enrollments = await _enrollmentRepository.GetAllEnrollmentsAsync();
-            var groupedBySemester = enrollments.GroupBy(e => e.Semester);
-
-            var completionRates = new List<CompletionRateDataDto>();
-
-            foreach (var group in groupedBySemester)
+            try
             {
-                var total = group.Count();
-                var completed = group.Count(e => !string.IsNullOrEmpty(e.Grade) && e.Grade != "F");
-
-                var rate = total == 0 ? 0 : (double)completed / total;
-
-                completionRates.Add(new CompletionRateDataDto
+                var enrollments = await _enrollmentRepository.GetAllEnrollmentsAsync();
+                if (enrollments == null || !enrollments.Any())
                 {
-                    Semester = group.Key,
-                    CompletionRate = rate
-                });
-            }
+                    return new List<CompletionRateDataDto>();
+                }
 
-            return completionRates;
+                var groupedBySemester = enrollments.GroupBy(e => e.Semester ?? "Unknown");
+                var completionRates = new List<CompletionRateDataDto>();
+
+                foreach (var group in groupedBySemester)
+                {
+                    var total = group.Count();
+                    var completed = group.Count(e => e.Status == "Completed" || (!string.IsNullOrEmpty(e.Grade) && e.Grade != "F"));
+                    var failed = group.Count(e => e.Grade == "F");
+                    var inProgress = group.Count(e => e.Status == "Enrolled");
+
+                    var rate = total == 0 ? 0 : Math.Round((double)completed / total * 100, 2);
+
+                    completionRates.Add(new CompletionRateDataDto
+                    {
+                        Semester = group.Key,
+                        CompletionRate = rate,
+                        TotalEnrollments = total,
+                        CompletedEnrollments = completed,
+                        FailedEnrollments = failed,
+                        InProgressEnrollments = inProgress
+                    });
+                }
+
+                return completionRates.OrderBy(cr => cr.Semester).ToList();
+            }
+            catch (Exception)
+            {
+                return new List<CompletionRateDataDto>();
+            }
         }
     }
 }

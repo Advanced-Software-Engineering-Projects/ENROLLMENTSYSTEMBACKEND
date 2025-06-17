@@ -44,55 +44,6 @@ namespace ENROLLMENTSYSTEMBACKEND.Controllers
             return Ok(new { Message = "Login successful", Token = token });
         }
 
-        [HttpPost("validate-token")]
-        public IActionResult ValidateToken([FromBody] TokenValidationDto request)
-        {
-            try
-            {
-                if (string.IsNullOrEmpty(request.Token))
-                {
-                    return BadRequest(new { error = "Token is required." });
-                }
-
-                var tokenHandler = new JwtSecurityTokenHandler();
-                var key = Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]);
-
-                try
-                {
-                    tokenHandler.ValidateToken(request.Token, new TokenValidationParameters
-                    {
-                        ValidateIssuerSigningKey = true,
-                        IssuerSigningKey = new SymmetricSecurityKey(key),
-                        ValidateIssuer = true,
-                        ValidIssuer = _configuration["Jwt:Issuer"],
-                        ValidateAudience = true,
-                        ValidAudience = _configuration["Jwt:Audience"],
-                        ValidateLifetime = true,
-                        ClockSkew = TimeSpan.Zero
-                    }, out SecurityToken validatedToken);
-
-                    return Ok(new { message = "Token is valid." });
-                }
-                catch (SecurityTokenExpiredException)
-                {
-                    return Unauthorized(new { error = "Token has expired." });
-                }
-                catch (SecurityTokenInvalidSignatureException)
-                {
-                    return Unauthorized(new { error = "Token signature is invalid." });
-                }
-                catch (Exception)
-                {
-                    return Unauthorized(new { error = "Token is invalid." });
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error validating token");
-                return StatusCode(500, new { error = "An error occurred while validating the token." });
-            }
-        }
-
         private string GenerateJwtToken(User user)
         {
             var claims = new[]
@@ -100,20 +51,27 @@ namespace ENROLLMENTSYSTEMBACKEND.Controllers
                 new Claim(JwtRegisteredClaimNames.Sub, user.Id),
                 new Claim(JwtRegisteredClaimNames.Email, user.Email),
                 new Claim(ClaimTypes.Role, user.Role), // Add role if applicable
-                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                new Claim(JwtRegisteredClaimNames.Iat, new DateTimeOffset(DateTime.UtcNow).ToUnixTimeSeconds().ToString(), ClaimValueTypes.Integer64)
             };
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
+            var expiry = DateTime.UtcNow.AddMinutes(30); // Token expiration
             var token = new JwtSecurityToken(
                 issuer: _configuration["Jwt:Issuer"],
                 audience: _configuration["Jwt:Audience"],
                 claims: claims,
-                expires: DateTime.Now.AddMinutes(30), // Token expiration
+                expires: expiry,
                 signingCredentials: creds);
 
-            return new JwtSecurityTokenHandler().WriteToken(token);
+            var tokenString = new JwtSecurityTokenHandler().WriteToken(token);
+            
+            _logger.LogInformation("JWT Token generated for user {UserId} with role {Role}, expires at {Expiry}", 
+                user.Id, user.Role, expiry);
+            
+            return tokenString;
         }
 
         [HttpPost("ResetUserPassword")]
@@ -159,5 +117,6 @@ namespace ENROLLMENTSYSTEMBACKEND.Controllers
             _logger.LogInformation("Session extended for UserId: {UserId}", HttpContext.Session.GetString("UserId"));
             return Ok(new { Message = "Session extended" });
         }
+
     }
 }

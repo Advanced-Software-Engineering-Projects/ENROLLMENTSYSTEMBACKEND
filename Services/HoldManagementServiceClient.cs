@@ -11,7 +11,6 @@ namespace ENROLLMENTSYSTEMBACKEND.Services
     public class HoldManagementServiceClient
     {
         private readonly HttpClient _httpClient;
-        private readonly string _baseUrl = "http://localhost:5003/api";
         private readonly JsonSerializerOptions _jsonOptions;
 
         public HoldManagementServiceClient(HttpClient httpClient)
@@ -25,12 +24,12 @@ namespace ENROLLMENTSYSTEMBACKEND.Services
 
         public async Task<HttpResponseMessage> GetHoldsAsync(string studentId)
         {
-            return await _httpClient.GetAsync($"{_baseUrl}/HoldManagement/student-holds/student/{studentId}");
+            return await _httpClient.GetAsync($"HoldManagement/student-holds/student/{studentId}");
         }
 
         public async Task<HttpResponseMessage> CheckServiceAccessAsync(string studentId, string service)
         {
-            return await _httpClient.GetAsync($"{_baseUrl}/HoldManagement/integration/check-access?studentId={studentId}&service={service}&apiKey=your-secure-api-key");
+            return await _httpClient.GetAsync($"HoldManagement/integration/check-access?studentId={studentId}&service={service}&apiKey=your-secure-api-key");
         }
 
         public async Task<HttpResponseMessage> AddHoldAsync(string studentId, string service, string reason)
@@ -43,17 +42,17 @@ namespace ENROLLMENTSYSTEMBACKEND.Services
             };
 
             var content = new StringContent(JsonSerializer.Serialize(hold), Encoding.UTF8, "application/json");
-            return await _httpClient.PostAsync($"{_baseUrl}/HoldManagement/student-holds", content);
+            return await _httpClient.PostAsync("HoldManagement/student-holds", content);
         }
 
         public async Task<HttpResponseMessage> RemoveHoldAsync(string holdId)
         {
-            return await _httpClient.DeleteAsync($"{_baseUrl}/HoldManagement/student-holds/{holdId}");
+            return await _httpClient.DeleteAsync($"HoldManagement/student-holds/{holdId}");
         }
 
         public async Task<HttpResponseMessage> GetServiceAccessRulesAsync()
         {
-            return await _httpClient.GetAsync($"{_baseUrl}/HoldManagement/service-access-rules");
+            return await _httpClient.GetAsync("HoldManagement/service-access-rules");
         }
 
         public async Task<HttpResponseMessage> UpdateServiceAccessRulesAsync(Dictionary<string, bool> allowedServices)
@@ -66,7 +65,7 @@ namespace ENROLLMENTSYSTEMBACKEND.Services
             };
 
             var content = new StringContent(JsonSerializer.Serialize(rules), Encoding.UTF8, "application/json");
-            return await _httpClient.PutAsync($"{_baseUrl}/HoldManagement/service-access-rules", content);
+            return await _httpClient.PutAsync("HoldManagement/service-access-rules", content);
         }
     }
 }
