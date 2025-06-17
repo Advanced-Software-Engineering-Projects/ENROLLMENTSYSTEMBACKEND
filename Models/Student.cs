@@ -23,5 +23,7 @@ namespace ENROLLMENTSYSTEMBACKEND.Models
         public string Major1 { get; set; }
         public string Major2 { get; set; }
         public string ProgramId { get; set; }
+
+        public int Year { get; set; }
     }
 }

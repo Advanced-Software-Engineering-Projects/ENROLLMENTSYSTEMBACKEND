@@ -18,7 +18,7 @@ namespace ENROLLMENTSYSTEMBACKEND.Services
         public StudentFormsServiceClient(
             HttpClient httpClient,
             ILogger<StudentFormsServiceClient> logger,
-            string baseUrl = "http://forms-service/api/")
+            string baseUrl)
         {
             _httpClient = httpClient;
             _logger = logger;
@@ -29,7 +29,7 @@ namespace ENROLLMENTSYSTEMBACKEND.Services
         {
             try
             {
-                return await _httpClient.GetAsync($"{_baseUrl}forms?studentId={studentId}");
+                return await _httpClient.GetAsync($"forms?studentId={studentId}");
             }
             catch (Exception ex)
             {

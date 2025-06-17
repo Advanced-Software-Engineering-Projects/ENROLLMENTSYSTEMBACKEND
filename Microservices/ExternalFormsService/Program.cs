@@ -23,6 +23,8 @@ builder.Services.AddScoped<IExternalFormRepository, ExternalFormRepository>();
 
 // Add Services
 builder.Services.AddScoped<IExternalFormService, ExternalFormService>();
+builder.Services.AddScoped<IGraduationApplicationService, GraduationApplicationService>();
+builder.Services.AddHttpClient<IGraduationApplicationService, GraduationApplicationService>();
 
 // Add CORS
 builder.Services.AddCors(options =>

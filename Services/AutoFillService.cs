@@ -1,5 +1,6 @@
 using ENROLLMENTSYSTEMBACKEND.DTOs;
 using ENROLLMENTSYSTEMBACKEND.Repositories;
+using ENROLLMENTSYSTEMBACKEND.Models;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -32,14 +33,14 @@ namespace ENROLLMENTSYSTEMBACKEND.Services
             {
                 _logger.LogInformation("Getting auto-fill data for student {StudentId} and form type {FormType}", studentId, formType);
 
-                var student = await _studentRepository.GetByIdAsync(studentId);
+                var student = await _studentRepository.GetStudentByIdAsync(studentId);
                 if (student == null)
                 {
                     throw new KeyNotFoundException($"Student not found with ID: {studentId}");
                 }
 
                 var enrollments = await _enrollmentRepository.GetEnrollmentsByStudentIdAsync(studentId);
-                var program = await _programRepository.GetByIdAsync(student.ProgramId);
+                var program = await _programRepository.GetProgramByIdAsync(student.ProgramId);
 
                 var autoFillData = new FormAutoFillDataDto
                 {
@@ -91,7 +92,7 @@ namespace ENROLLMENTSYSTEMBACKEND.Services
             {
                 _logger.LogInformation("Validating auto-fill data for student {StudentId}", studentId);
 
-                var student = await _studentRepository.GetByIdAsync(studentId);
+                var student = await _studentRepository.GetStudentByIdAsync(studentId);
                 if (student == null)
                 {
                     return false;
@@ -169,7 +170,7 @@ namespace ENROLLMENTSYSTEMBACKEND.Services
             }
         }
 
-        private async Task AddGraduationDataAsync(FormAutoFillDataDto autoFillData, Student student, Program program)
+        private async Task AddGraduationDataAsync(FormAutoFillDataDto autoFillData, Student student, Programs program)
         {
             autoFillData.Fields.Add("ExpectedGraduationDate", DateTime.Now.AddMonths(6).ToString("yyyy-MM-dd"));
             autoFillData.Fields.Add("ProgramCompletionStatus", "In Progress");
@@ -181,7 +182,7 @@ namespace ENROLLMENTSYSTEMBACKEND.Services
             });
         }
 
-        private async Task AddCourseRegistrationDataAsync(FormAutoFillDataDto autoFillData, Student student, Program program)
+        private async Task AddCourseRegistrationDataAsync(FormAutoFillDataDto autoFillData, Student student, Programs program)
         {
             autoFillData.Fields.Add("Semester", GetCurrentSemester());
             autoFillData.AdditionalData.Add("ProgramRequirements", new

@@ -131,6 +131,11 @@ namespace ENROLLMENTSYSTEMBACKEND
                 client.BaseAddress = new Uri(builder.Configuration["ServiceEndpoints:FormsService"] ?? "http://forms-service/api/");
             });
 
+            builder.Services.AddHttpClient("FormsService", client =>
+            {
+                client.BaseAddress = new Uri(builder.Configuration["Microservices:FormsServiceUrl"]);
+            });
+
             // Add CORS
             builder.Services.AddCors(options =>
             {

@@ -9,7 +9,8 @@ namespace ExternalFormsService.DTOs
         public Dictionary<string, string> Fields { get; set; }
         public List<string> Attachments { get; set; }
         public DateTime SubmissionDate { get; set; }
-        public string Status { get; set; }
+        public string Status { get; set; }cls
+        
         public string Comments { get; set; }
     }
 } 
