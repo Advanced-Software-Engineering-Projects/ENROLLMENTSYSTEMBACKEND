@@ -1,5 +1,10 @@
 ﻿using ENROLLMENTSYSTEMBACKEND.DTOs;
+using ENROLLMENTSYSTEMBACKEND.Models;
 using ENROLLMENTSYSTEMBACKEND.Repositories;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace ENROLLMENTSYSTEMBACKEND.Services
 {
@@ -71,6 +76,37 @@ namespace ENROLLMENTSYSTEMBACKEND.Services
                 ProgramName = program.Name,
                 CourseStatuses = courseStatuses,
                 CompletionProgress = completionProgress
+            };
+        }
+
+        public async Task<StudentDto?> GetStudentByIdAsync(string studentId)
+        {
+            var student = await _studentRepository.GetStudentByIdAsync(studentId);
+            if (student == null)
+            {
+                return null;
+            }
+
+            return new StudentDto
+            {
+                StudentId = student.StudentId,
+                Name = student.Name,
+                FirstName = student.FirstName,
+                MiddleName = student.MiddleName,
+                LastName = student.LastName,
+                Dob = student.Dob,
+                Email = student.Email,
+                Phone = student.Phone,
+                Avatar = student.Avatar,
+                Gender = student.Gender,
+                Citizenship = student.Citizenship,
+                Program = student.Program,
+                StudentLevel = student.StudentLevel,
+                StudentCampus = student.StudentCampus,
+                ExamSite = student.ExamSite,
+                MajorType = student.MajorType,
+                Major1 = student.Major1,
+                Major2 = student.Major2
             };
         }
     }

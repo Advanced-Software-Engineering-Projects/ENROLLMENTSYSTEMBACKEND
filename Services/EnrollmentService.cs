@@ -217,10 +217,12 @@ namespace ENROLLMENTSYSTEMBACKEND.Services
             var enrollment = new Enrollment
             {
                 StudentId = studentId,
+                CourseId = course.CourseId,
                 CourseCode = courseCode,
                 Semester = semester,
                 Status = "Enrolled",
-                EnrollmentDate = DateTime.UtcNow
+                EnrollmentDate = DateTime.UtcNow,
+                Year = DateTime.UtcNow.Year
             };
 
             await _enrollmentRepository.AddEnrollmentAsync(enrollment);

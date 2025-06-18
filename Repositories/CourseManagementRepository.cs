@@ -34,10 +34,15 @@ namespace ENROLLMENTSYSTEMBACKEND.Repositories
 
         public async Task CloseRegistrationAsync(List<string> courseCodes)
         {
-            // Find registrations containing any of the specified course codes
-            var registrationsToUpdate = await _context.Set<CourseRegistrationPeriod>()
-                .Where(r => r.IsActive && r.CourseCodes.Any(c => courseCodes.Contains(c)))
+            // Retrieve all active registrations first
+            var activeRegistrations = await _context.Set<CourseRegistrationPeriod>()
+                .Where(r => r.IsActive)
                 .ToListAsync();
+
+            // Filter registrations in memory by course codes
+            var registrationsToUpdate = activeRegistrations
+                .Where(r => r.CourseCodes.Any(c => courseCodes.Contains(c)))
+                .ToList();
 
             foreach (var registration in registrationsToUpdate)
             {

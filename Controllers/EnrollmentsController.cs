@@ -27,8 +27,15 @@ namespace ENROLLMENTSYSTEMBACKEND.Controllers
                 return BadRequest("Student ID is required.");
             }
 
-            var enrolledCourses = await _enrollmentService.GetEnrolledCoursesAsync(studentId);
-            return Ok(enrolledCourses);
+            try
+            {
+                var enrolledCourses = await _enrollmentService.GetEnrolledCoursesAsync(studentId);
+                return Ok(enrolledCourses);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return NotFound(ex.Message);
+            }
         }
 
         //Retrieves dropped courses for a student.
