@@ -72,7 +72,7 @@ namespace ENROLLMENTSYSTEMBACKEND.Services
                 return new List<CourseDto>();
             }
 
-            var enrolledEnrollments = enrollments.Where(e => e.Status == "Enrolled").ToList();
+            var enrolledEnrollments = enrollments.Where(e => e.Status == "Completed").ToList();
             if (!enrolledEnrollments.Any())
             {
                 return new List<CourseDto>();
@@ -152,10 +152,23 @@ namespace ENROLLMENTSYSTEMBACKEND.Services
                 .Select(e => e.CourseCode)
                 .ToList();
 
+            //var availableCourses = allCourses
+            //    .Where(c => c.Program == program && 
+            //               //c.IsActive && 
+            //               !enrolledCourseCodes.Contains(c.CourseCode));
             var availableCourses = allCourses
-                .Where(c => c.Program == program && 
-                           c.IsActive && 
-                           !enrolledCourseCodes.Contains(c.CourseCode));
+    .Where(c =>
+    {
+        bool programMatch = c.Program == program;
+        bool notEnrolled = !enrolledCourseCodes.Contains(c.CourseCode);
+
+        Console.WriteLine($"Checking Course: {c.CourseCode}");
+        Console.WriteLine($"  Program: {c.Program} == {program} => {programMatch}");
+        Console.WriteLine($"  Not Enrolled/Completed: {!enrolledCourseCodes.Contains(c.CourseCode)} => {notEnrolled}");
+
+        return programMatch && notEnrolled;
+    });
+
 
             return availableCourses.Select(MapToDto).ToList();
         }
