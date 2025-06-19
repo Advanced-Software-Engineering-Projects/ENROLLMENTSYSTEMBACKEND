@@ -34,6 +34,7 @@ namespace ENROLLMENTSYSTEMBACKEND.Services
                 Program = course.Program,
                 Year = course.Year,
                 Description = course.Description,
+                IsActive = course.IsActive,
                 Prerequisites = course.Prerequisites.Select(p => new CoursePrerequisiteDto
                 {
                     Id = p.Id,

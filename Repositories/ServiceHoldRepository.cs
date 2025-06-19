@@ -28,6 +28,7 @@ namespace ENROLLMENTSYSTEMBACKEND.Repositories
             public async Task<List<ServiceHold>> GetHoldsByStudentIdAsync(string studentId)
             {
                 return await _context.ServiceHolds
+                    .Include(sh => sh.Service)
                     .Where(sh => sh.StudentId == studentId)
                     .ToListAsync();
             }

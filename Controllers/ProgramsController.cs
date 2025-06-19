@@ -43,24 +43,24 @@ namespace ENROLLMENTSYSTEMBACKEND.Controllers
             }
         }
 
-        //Get student by StudentId
-        [HttpGet("student/{studentId}")] // Updated route
-        public async Task<IActionResult> GetStudentById(string studentId)
-        {
-            try
-            {
-                var student = await _programService.GetStudentByIdAsync(studentId);
-                if (student == null)
-                {
-                    return NotFound($"Student with ID {studentId} not found");
-                }
-                return Ok(student);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error retrieving student");
-                return StatusCode(500, "An error occurred while retrieving student");
-            }
-        }
+        ////Get student by StudentId
+        //[HttpGet("student/{studentId}")] // Updated route
+        //public async Task<IActionResult> GetStudentById(string studentId)
+        //{
+        //    try
+        //    {
+        //        var student = await _programService.GetStudentByIdAsync(studentId);
+        //        if (student == null)
+        //        {
+        //            return NotFound($"Student with ID {studentId} not found");
+        //        }
+        //        return Ok(student);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        _logger.LogError(ex, "Error retrieving student");
+        //        return StatusCode(500, "An error occurred while retrieving student");
+        //    }
+        //}
     }
 }

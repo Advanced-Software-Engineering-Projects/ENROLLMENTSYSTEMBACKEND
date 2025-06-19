@@ -1,4 +1,5 @@
-﻿using ENROLLMENTSYSTEMBACKEND.DTOs;
+﻿using ENROLLMENTSYSTEMBACKEND.Data;
+using ENROLLMENTSYSTEMBACKEND.DTOs;
 using ENROLLMENTSYSTEMBACKEND.Models;
 using ENROLLMENTSYSTEMBACKEND.Repositories;
 using QuestPDF.Fluent;
@@ -11,13 +12,16 @@ namespace ENROLLMENTSYSTEMBACKEND.Services
     {
         private readonly IServiceHoldRepository _serviceHoldRepository;
         private readonly ILogger<ServiceHoldService> _logger;
+        private readonly EnrollmentInformationDbContext _context;
 
         public ServiceHoldService(
             IServiceHoldRepository serviceHoldRepository,
-            ILogger<ServiceHoldService> logger)
+            ILogger<ServiceHoldService> logger, 
+            EnrollmentInformationDbContext context)
         {
             _serviceHoldRepository = serviceHoldRepository;
             _logger = logger;
+            _context = context;
         }
 
         public async Task<List<StudentWithHoldsDto>> GetAllStudentsAsync()

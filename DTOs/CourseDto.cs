@@ -10,6 +10,7 @@ namespace ENROLLMENTSYSTEMBACKEND.DTOs
         public string Name { get; set; } = string.Empty;
         public string Program { get; set; } = string.Empty;
         public int Year { get; set; }
+        public bool? IsActive { get; set; }
         public string Description { get; set; } = string.Empty;
         public ICollection<CoursePrerequisiteDto> Prerequisites { get; set; } = new List<CoursePrerequisiteDto>();
     }
