@@ -1,4 +1,4 @@
-﻿using ENROLLMENTSYSTEMBACKEND.Models;
+using ENROLLMENTSYSTEMBACKEND.Models;
 
 namespace ENROLLMENTSYSTEMBACKEND.Repositories
 {
@@ -23,6 +23,11 @@ namespace ENROLLMENTSYSTEMBACKEND.Repositories
                 _grades.Add(new Grade { StudentId = studentId, CourseId = courseId, GradeValue = newGrade });
             }
             await Task.CompletedTask;
+        }
+
+        public async Task<Grade?> GetGradeAsync(string studentId, string courseCode)
+        {
+            return await Task.FromResult(_grades.FirstOrDefault(g => g.StudentId == studentId && g.CourseId == courseCode));
         }
     }
 }

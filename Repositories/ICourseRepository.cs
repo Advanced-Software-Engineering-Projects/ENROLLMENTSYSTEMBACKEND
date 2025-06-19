@@ -1,15 +1,16 @@
-﻿using ENROLLMENTSYSTEMBACKEND.Models;
+using ENROLLMENTSYSTEMBACKEND.Models;
 
 namespace ENROLLMENTSYSTEMBACKEND.Repositories
 {
     public interface ICourseRepository
     {
-        Task<Course> GetCourseByIdAsync(string courseId);
-        Task<List<Course>> GetCoursesAsync();
+        Task<Course?> GetCourseByIdAsync(string courseId);
+        Task<Course?> GetCourseByCodeAsync(string courseCode);
         Task<List<Course>> GetAllCoursesAsync();
-        Task<Course> GetCourseByCodeAsync(string courseCode);
+        Task<List<Course>> GetCoursesByProgramAsync(string program);
+        Task<List<Course>> GetCoursesByProgramAndYearAsync(string program, int year);
         Task AddCourseAsync(Course course);
         Task UpdateCourseAsync(Course course);
-        Task DeleteCourseAsync(string courseCode);
+        Task DeleteCourseAsync(string courseId);
     }
 }

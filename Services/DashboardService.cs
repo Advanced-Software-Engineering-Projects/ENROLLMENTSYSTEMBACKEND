@@ -26,16 +26,30 @@ namespace ENROLLMENTSYSTEMBACKEND.Services
         public async Task<List<EnrolledCourse>> GetEnrolledCoursesAsync(string studentId)
         {
             var enrollments = await _enrollmentRepository.GetEnrollmentsByStudentIdAsync(studentId);
+            if (enrollments == null || !enrollments.Any())
+            {
+                return new List<EnrolledCourse>();
+            }
+
             var enrolledCourses = enrollments.Where(e => e.Status == "Enrolled").ToList();
+            if (!enrolledCourses.Any())
+            {
+                return new List<EnrolledCourse>();
+            }
+
             var courseIds = enrolledCourses.Select(e => e.CourseId).ToList();
             var allCourses = await _courseRepository.GetAllCoursesAsync();
-            return allCourses.Where(c => courseIds.Contains(c.CourseId)).Select(c => new EnrolledCourse
-            {
-                CourseId = c.CourseId,
-                CourseCode = c.CourseCode,
-                CourseName = c.CourseName,
-                DueDate = c.DueDate.ToString("yyyy-MM-dd")
-            }).ToList();
+            
+            return allCourses
+                .Where(c => courseIds.Contains(c.CourseId))
+                .Select(c => new EnrolledCourse
+                {
+                    CourseId = c.CourseId,
+                    CourseCode = c.CourseCode,
+                    CourseName = c.CourseName,
+                    DueDate = c.DueDate.ToString("yyyy-MM-dd")
+                })
+                .ToList();
         }
 
         public async Task<int> GetCompletedCoursesCurrentYearAsync(string studentId)
@@ -122,14 +136,30 @@ namespace ENROLLMENTSYSTEMBACKEND.Services
         public async Task<List<CompletionRateData>> GetCompletionRateDataAsync()
         {
             var enrollments = await _enrollmentRepository.GetAllEnrollmentsAsync();
+            if (enrollments == null || !enrollments.Any())
+            {
+                return new List<CompletionRateData>();
+            }
+
             var completionRateData = enrollments
                 .GroupBy(e => e.Semester)
-                .Select(g => new CompletionRateData
+                .Select(g =>
                 {
-                    Semester = g.Key,
-                    Rate = (int)((double)g.Count(e => e.Status == "Completed") / g.Count() * 100)
+                    var totalCount = g.Count();
+                    var completedCount = g.Count(e => e.Status == "Completed");
+                    var rate = totalCount > 0 ? (int)((double)completedCount / totalCount * 100) : 0;
+
+                    return new CompletionRateData
+                    {
+                        Semester = g.Key,
+                        Rate = rate,
+                        TotalEnrollments = totalCount,
+                        CompletedEnrollments = completedCount
+                    };
                 })
+                .OrderBy(d => d.Semester)
                 .ToList();
+
             return completionRateData;
         }
     }

@@ -1,4 +1,4 @@
-﻿using ENROLLMENTSYSTEMBACKEND.Models;
+using ENROLLMENTSYSTEMBACKEND.Models;
 using ENROLLMENTSYSTEMBACKEND.Data;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
@@ -9,9 +9,9 @@ namespace ENROLLMENTSYSTEMBACKEND.Repositories
 {
     public class FeeRepository : IFeeRepository
     {
-        private readonly EnrollmentInfromation _context;
+        private readonly EnrollmentInformationDbContext _context;
 
-        public FeeRepository(EnrollmentInfromation context)
+        public FeeRepository(EnrollmentInformationDbContext context)
         {
             _context = context;
         }

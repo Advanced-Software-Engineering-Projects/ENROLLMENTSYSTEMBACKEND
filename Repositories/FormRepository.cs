@@ -1,4 +1,4 @@
-﻿using ENROLLMENTSYSTEMBACKEND.Data;
+using ENROLLMENTSYSTEMBACKEND.Data;
 using ENROLLMENTSYSTEMBACKEND.Models;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
@@ -9,9 +9,9 @@ namespace ENROLLMENTSYSTEMBACKEND.Repositories
 {
     public class FormRepository : IFormRepository
     {
-        private readonly EnrollmentInfromation _context;
+        private readonly EnrollmentInformationDbContext _context;
 
-        public FormRepository(EnrollmentInfromation context)
+        public FormRepository(EnrollmentInformationDbContext context)
         {
             _context = context;
         }

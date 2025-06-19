@@ -1,17 +1,17 @@
-﻿using System.Collections.Generic;
+using ENROLLMENTSYSTEMBACKEND.Models;
+using ENROLLMENTSYSTEMBACKEND.Data;
+using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using ENROLLMENTSYSTEMBACKEND.Data;
-using ENROLLMENTSYSTEMBACKEND.Models;
-using Microsoft.EntityFrameworkCore;
 
 namespace ENROLLMENTSYSTEMBACKEND.Repositories
 {
     public class TimetableRepository : ITimetableRepository
     {
-        private readonly EnrollmentInfromation _context;
+        private readonly EnrollmentInformationDbContext _context;
 
-        public TimetableRepository(EnrollmentInfromation context)
+        public TimetableRepository(EnrollmentInformationDbContext context)
         {
             _context = context;
         }
@@ -28,6 +28,12 @@ namespace ENROLLMENTSYSTEMBACKEND.Repositories
             _context.Timetables.Add(timetable);
             await _context.SaveChangesAsync();
             return timetable;
+        }
+
+        public async Task UpdateTimetableAsync(Timetable timetable)
+        {
+            _context.Timetables.Update(timetable);
+            await _context.SaveChangesAsync();
         }
     }
 }

@@ -51,20 +51,27 @@ namespace ENROLLMENTSYSTEMBACKEND.Controllers
                 new Claim(JwtRegisteredClaimNames.Sub, user.Id),
                 new Claim(JwtRegisteredClaimNames.Email, user.Email),
                 new Claim(ClaimTypes.Role, user.Role), // Add role if applicable
-                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                new Claim(JwtRegisteredClaimNames.Iat, new DateTimeOffset(DateTime.UtcNow).ToUnixTimeSeconds().ToString(), ClaimValueTypes.Integer64)
             };
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
+            var expiry = DateTime.UtcNow.AddMinutes(30); // Token expiration
             var token = new JwtSecurityToken(
                 issuer: _configuration["Jwt:Issuer"],
                 audience: _configuration["Jwt:Audience"],
                 claims: claims,
-                expires: DateTime.Now.AddMinutes(30), // Token expiration
+                expires: expiry,
                 signingCredentials: creds);
 
-            return new JwtSecurityTokenHandler().WriteToken(token);
+            var tokenString = new JwtSecurityTokenHandler().WriteToken(token);
+            
+            _logger.LogInformation("JWT Token generated for user {UserId} with role {Role}, expires at {Expiry}", 
+                user.Id, user.Role, expiry);
+            
+            return tokenString;
         }
 
         [HttpPost("ResetUserPassword")]
@@ -110,5 +117,6 @@ namespace ENROLLMENTSYSTEMBACKEND.Controllers
             _logger.LogInformation("Session extended for UserId: {UserId}", HttpContext.Session.GetString("UserId"));
             return Ok(new { Message = "Session extended" });
         }
+
     }
 }

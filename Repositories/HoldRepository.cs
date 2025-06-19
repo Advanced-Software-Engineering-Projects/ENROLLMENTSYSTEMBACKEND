@@ -17,7 +17,12 @@ namespace ENROLLMENTSYSTEMBACKEND.Repositories
 
         public async Task<Hold> GetHoldByIdAsync(string id)
         {
-            return await Task.FromResult(_holds.FirstOrDefault(h => h.Id == id));
+            var hold = _holds.FirstOrDefault(h => h.Id == id);
+            if (hold == null)
+            {
+                throw new InvalidOperationException("Hold not found.");
+            }
+            return await Task.FromResult(hold);
         }
 
         public async Task AddHoldAsync(Hold hold)
@@ -31,10 +36,11 @@ namespace ENROLLMENTSYSTEMBACKEND.Repositories
         public async Task RemoveHoldAsync(string id)
         {
             var hold = _holds.FirstOrDefault(h => h.Id == id);
-            if (hold != null)
+            if (hold == null)
             {
-                _holds.Remove(hold);
+                throw new InvalidOperationException("Hold not found.");
             }
+            _holds.Remove(hold);
             await Task.CompletedTask;
         }
     }

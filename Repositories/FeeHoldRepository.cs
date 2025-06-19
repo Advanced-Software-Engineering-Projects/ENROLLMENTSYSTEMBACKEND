@@ -9,9 +9,9 @@ namespace ENROLLMENTSYSTEMBACKEND.Repositories
 {
     public class FeeHoldRepository : IFeeHoldRepository
     {
-        private readonly EnrollmentInfromation _context;
+        private readonly EnrollmentInformationDbContext _context;
 
-        public FeeHoldRepository(EnrollmentInfromation context)
+        public FeeHoldRepository(EnrollmentInformationDbContext context)
         {
             _context = context;
         }

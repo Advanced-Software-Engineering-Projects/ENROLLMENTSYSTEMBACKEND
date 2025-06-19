@@ -1,8 +1,8 @@
-﻿namespace ENROLLMENTSYSTEMBACKEND.DTOs
+namespace ENROLLMENTSYSTEMBACKEND.DTOs
 {
     public class UpdateGradeDto
     {
-        public string SubmissionId { get; set; }
-        public string NewGrade { get; set; }
+        public string SubmissionId { get; set; } = string.Empty;
+        public string NewGrade { get; set; } = string.Empty;
     }
 }

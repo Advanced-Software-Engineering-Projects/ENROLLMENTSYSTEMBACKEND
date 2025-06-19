@@ -1,4 +1,4 @@
-﻿using ENROLLMENTSYSTEMBACKEND.Models;
+using ENROLLMENTSYSTEMBACKEND.Models;
 
 namespace ENROLLMENTSYSTEMBACKEND.Repositories
 {
@@ -12,5 +12,9 @@ namespace ENROLLMENTSYSTEMBACKEND.Repositories
         Task UpdateEnrollmentAsync(Enrollment enrollment);
         Task DeleteEnrollmentAsync(string enrollmentId);
         Task<List<Enrollment>> GetAllEnrollmentsAsync();
+        Task<List<(string Semester, int Count)>> GetEnrollmentCountsBySemesterAsync();
+        Task<List<Enrollment>> GetEnrollmentsBySemesterAsync(string studentId, string semester);
+        Task UpdateGradeAsync(string enrollmentId, string grade);
+        Task<List<Enrollment>> GetCompletedEnrollmentsAsync(string studentId);
     }
 }

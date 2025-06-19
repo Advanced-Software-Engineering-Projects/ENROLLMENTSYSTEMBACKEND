@@ -1,4 +1,4 @@
-﻿using ENROLLMENTSYSTEMBACKEND.DTOs;
+using ENROLLMENTSYSTEMBACKEND.DTOs;
 using ENROLLMENTSYSTEMBACKEND.Models;
 using ENROLLMENTSYSTEMBACKEND.Repositories;
 
@@ -74,7 +74,7 @@ namespace ENROLLMENTSYSTEMBACKEND.Services
             }).ToList();
         }
 
-        public async Task<RegistrationPeriodDto> GetCurrentRegistrationPeriodAsync()
+        public async Task<RegistrationPeriodDto?> GetCurrentRegistrationPeriodAsync()
         {
             var currentPeriod = await _registrationPeriodRepository.GetCurrentRegistrationPeriodAsync();
             if (currentPeriod == null)

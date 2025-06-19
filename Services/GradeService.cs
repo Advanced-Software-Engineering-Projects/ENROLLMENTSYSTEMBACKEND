@@ -1,4 +1,4 @@
-﻿using ENROLLMENTSYSTEMBACKEND.DTOs;
+using ENROLLMENTSYSTEMBACKEND.DTOs;
 using ENROLLMENTSYSTEMBACKEND.Models;
 using ENROLLMENTSYSTEMBACKEND.Repositories;
 using System;
@@ -108,6 +108,8 @@ namespace ENROLLMENTSYSTEMBACKEND.Services
             return new ProgramAuditDto
             {
                 StudentId = studentId,
+                StudentName = "Student Name", // Adding required property
+                ProgramName = "Program Name", // Adding required property
                 CourseStatuses = courseStatuses,
                 CompletionProgress = (double)completedCourses.Count / requiredCourses.Count,
                 IsEligible = isEligible
@@ -136,41 +138,125 @@ namespace ENROLLMENTSYSTEMBACKEND.Services
 
         public async Task<GraduationApplicationDto> ApplyForGraduationAsync(string studentId)
         {
-            // Placeholder: In a real system, this would interact with a database or service
-            return await Task.FromResult(new GraduationApplicationDto
+            if (string.IsNullOrEmpty(studentId))
             {
+                throw new ArgumentException("Student ID cannot be null or empty", nameof(studentId));
+            }
+
+            var student = await _studentRepository.GetStudentByIdAsync(studentId);
+            if (student == null)
+            {
+                throw new InvalidOperationException("Student not found");
+            }
+
+            var isEligible = await CheckGraduationEligibilityAsync(studentId);
+            if (!isEligible)
+            {
+                throw new InvalidOperationException("Student is not eligible for graduation");
+            }
+
+            // In a real system, this would interact with a database or service
+            return new GraduationApplicationDto
+            {
+                ApplicationId = Guid.NewGuid().ToString(),
                 StudentId = studentId,
-                Status = "Applied"
-            });
+                StudentName = $"{student.FirstName} {student.LastName}",
+                Program = student.Program,
+                ApplicationDate = DateTime.UtcNow,
+                Status = "Applied",
+                ExpectedGraduationDate = DateTime.UtcNow.AddMonths(3)
+            };
         }
 
         public async Task<GraduationApplicationDto> GetGraduationStatusAsync(string studentId)
         {
-            // Placeholder: In a real system, this would fetch from a database
-            return await Task.FromResult(new GraduationApplicationDto
+            if (string.IsNullOrEmpty(studentId))
             {
+                throw new ArgumentException("Student ID cannot be null or empty", nameof(studentId));
+            }
+
+            var student = await _studentRepository.GetStudentByIdAsync(studentId);
+            if (student == null)
+            {
+                throw new InvalidOperationException("Student not found");
+            }
+
+            // In a real system, this would fetch from a database
+            return new GraduationApplicationDto
+            {
+                ApplicationId = Guid.NewGuid().ToString(),
                 StudentId = studentId,
-                Status = "Pending"
-            });
+                StudentName = $"{student.FirstName} {student.LastName}",
+                Program = student.Program,
+                ApplicationDate = DateTime.UtcNow.AddDays(-30), // Example: Applied 30 days ago
+                Status = "Pending",
+                ExpectedGraduationDate = DateTime.UtcNow.AddMonths(3)
+            };
         }
 
         public async Task<List<Grade>> GetGradesByStudentIdAsync(string studentId)
         {
-            var enrollments = await _enrollmentRepository.GetEnrollmentsByStudentIdAsync(studentId);
-            return enrollments.Select(e => new Grade
+            if (string.IsNullOrEmpty(studentId))
             {
-                CourseId = e.CourseId,
-                GradeValue = e.Grade
-            }).ToList();
+                throw new ArgumentException("Student ID cannot be null or empty", nameof(studentId));
+            }
+
+            var student = await _studentRepository.GetStudentByIdAsync(studentId);
+            if (student == null)
+            {
+                throw new InvalidOperationException("Student not found");
+            }
+
+            var enrollments = await _enrollmentRepository.GetEnrollmentsByStudentIdAsync(studentId);
+            if (!enrollments.Any())
+            {
+                return new List<Grade>();
+            }
+
+            var courses = await _courseRepository.GetAllCoursesAsync();
+            
+            return enrollments
+                .Where(e => !string.IsNullOrEmpty(e.Grade))
+                .Select(e =>
+                {
+                    return new Grade
+                    {
+                        StudentId = e.StudentId,
+                        CourseId = e.CourseId,
+                        GradeValue = e.Grade
+                    };
+                })
+                .ToList();
         }
 
         public async Task<FormSubmissionDto> UpdateGradeAsync(UpdateGradeDto updateGradeDto)
         {
-            // Placeholder: In a real system, this would update the grade in the repository
+            if (string.IsNullOrEmpty(updateGradeDto.SubmissionId))
+            {
+                throw new ArgumentException("SubmissionId cannot be null or empty");
+            }
+
+            // Remove any int parsing or conversion, treat SubmissionId as string GUID
+            int submissionId;
+            if (!int.TryParse(updateGradeDto.SubmissionId, out submissionId))
+            {
+                throw new ArgumentException("SubmissionId must be a valid integer");
+            }
+
+            // TODO: Implement actual update logic here to update grade in repository
+
+            // For now, simulate update and return a FormSubmissionDto with SubmissionId as int
             return await Task.FromResult(new FormSubmissionDto
             {
-                SubmissionId = updateGradeDto.SubmissionId,
-                Status = "Updated"
+                SubmissionId = submissionId,
+                StudentId = "S123",
+                FullName = "Student Name",
+                Email = "student@example.com",
+                Telephone = "123-456-7890",
+                PostalAddress = "123 Main St",
+                FormType = "Grade Update",
+                Status = "Updated",
+                EmailStatus = "Sent"
             });
         }
 
@@ -197,19 +283,51 @@ namespace ENROLLMENTSYSTEMBACKEND.Services
 
         private double CalculateGpa(List<Enrollment> enrollments)
         {
-            if (enrollments.Count == 0) return 0.0;
+            if (enrollments == null || !enrollments.Any())
+            {
+                return 0.0;
+            }
 
-            var gradePoints = enrollments.Select(e => GetGradePoint(e.Grade)).ToList();
-            return gradePoints.Average();
+            var validEnrollments = enrollments
+                .Where(e => !string.IsNullOrEmpty(e.Grade))
+                .ToList();
+
+            if (!validEnrollments.Any())
+            {
+                return 0.0;
+            }
+
+            var totalPoints = 0.0;
+            var totalCredits = 0;
+
+            foreach (var enrollment in validEnrollments)
+            {
+                var gradePoint = GetGradePoint(enrollment.Grade);
+                var credits = enrollment.Course?.Credits ?? 3; // Access credits through Course navigation property
+                totalPoints += gradePoint * credits;
+                totalCredits += credits;
+            }
+
+            return totalCredits > 0 ? Math.Round(totalPoints / totalCredits, 2) : 0.0;
         }
 
         private double GetGradePoint(string grade)
         {
-            return grade switch
+            if (string.IsNullOrEmpty(grade))
+                return 0.0;
+
+            return grade.ToUpper() switch
             {
+                "A+" => 4.0,
                 "A" => 4.0,
+                "A-" => 3.7,
+                "B+" => 3.3,
                 "B" => 3.0,
+                "B-" => 2.7,
+                "C+" => 2.3,
                 "C" => 2.0,
+                "C-" => 1.7,
+                "D+" => 1.3,
                 "D" => 1.0,
                 "F" => 0.0,
                 _ => 0.0

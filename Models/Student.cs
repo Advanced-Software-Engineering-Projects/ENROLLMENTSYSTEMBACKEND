@@ -1,7 +1,8 @@
-﻿namespace ENROLLMENTSYSTEMBACKEND.Models
+namespace ENROLLMENTSYSTEMBACKEND.Models
 {
     public class Student
     {
+        public string Id { get; set; }  
         public string StudentId { get; set; }
         public string Name { get; set; }
         public string FirstName { get; set; }
@@ -22,5 +23,7 @@
         public string Major1 { get; set; }
         public string Major2 { get; set; }
         public string ProgramId { get; set; }
+
+        public int Year { get; set; }
     }
 }

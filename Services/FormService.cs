@@ -1,10 +1,8 @@
-﻿using ENROLLMENTSYSTEMBACKEND.DTOs;
+using ENROLLMENTSYSTEMBACKEND.DTOs;
 using ENROLLMENTSYSTEMBACKEND.Models;
 using ENROLLMENTSYSTEMBACKEND.Repositories;
-using Services;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace ENROLLMENTSYSTEMBACKEND.Services
@@ -12,109 +10,203 @@ namespace ENROLLMENTSYSTEMBACKEND.Services
     public class FormService : IFormService
     {
         private readonly IFormRepository _formRepository;
-        private readonly ExternalFormIntegrationServiceClient _externalFormClient;
+        private readonly IFormSubmissionRepository _formSubmissionRepository;
+        private readonly IFormConfigurationService _formConfigurationService;
 
-        public FormService(IFormRepository formRepository, ExternalFormIntegrationServiceClient externalFormClient)
+        public FormService(
+            IFormRepository formRepository,
+            IFormSubmissionRepository formSubmissionRepository,
+            IFormConfigurationService formConfigurationService)
         {
             _formRepository = formRepository;
-            _externalFormClient = externalFormClient;
+            _formSubmissionRepository = formSubmissionRepository;
+            _formConfigurationService = formConfigurationService;
         }
 
         public async Task<List<FormSubmissionDto>> GetFormsAsync(string? studentId, string? formType)
         {
-            // For simplicity, call external form microservice for all forms
-            var response = await _externalFormClient.GetFormsAsync();
-            response.EnsureSuccessStatusCode();
-            var json = await response.Content.ReadAsStringAsync();
-            var forms = System.Text.Json.JsonSerializer.Deserialize<List<FormSubmissionDto>>(json);
-            return forms;
-        }
+            if (string.IsNullOrEmpty(studentId))
+            {
+                throw new InvalidOperationException("Student ID cannot be null or empty.");
+            }
 
-        public async Task<List<FormSubmission>> GetFormsAsync(string studentId)
-        {
-            return await _formRepository.GetFormsByStudentIdAsync(studentId);
+            var forms = await _formSubmissionRepository.GetFormSubmissionsByStudentIdAsync(studentId);
+            if (forms == null || !forms.Any())
+            {
+                return new List<FormSubmissionDto>();
+            }
+            
+            if (!string.IsNullOrEmpty(formType))
+                forms = forms.FindAll(f => f.FormType.Equals(formType, StringComparison.OrdinalIgnoreCase));
+            
+            var formDtos = new List<FormSubmissionDto>();
+            foreach (var form in forms)
+            {
+                formDtos.Add(_formConfigurationService.MapToFormSubmissionDto(form));
+            }
+            
+            return formDtos;
         }
 
         public async Task<FormSubmissionDto> GetFormByIdAsync(string formId)
         {
-            var form = await _formRepository.GetFormByIdAsync(formId);
+            var form = await _formSubmissionRepository.GetFormSubmissionByIdAsync(formId);
             if (form == null)
-            {
-                return null;
-            }
-            return new FormSubmissionDto
-            {
-                SubmissionId = form.SubmissionId,
-                StudentId = form.StudentId,
-                FormType = form.FormType,
-                Status = form.Status,
-                SubmissionDate = form.SubmissionDate
-            };
+                throw new InvalidOperationException($"Form with ID {formId} not found");
+                
+            return _formConfigurationService.MapToFormSubmissionDto(form);
         }
 
         public async Task<FormSubmissionDto> CreateFormAsync(CreateFormDto createFormDto)
         {
-            var form = new FormSubmission
+            var formSubmission = new FormSubmission
             {
+                SubmissionId = Guid.NewGuid().ToString(),
                 StudentId = createFormDto.StudentId,
                 FormType = createFormDto.FormType,
-                Status = "Pending"
-            };
-            var createdForm = await _formRepository.CreateFormAsync(form);
-            return new FormSubmissionDto
-            {
-                SubmissionId = createdForm.SubmissionId,
-                StudentId = createdForm.StudentId,
-                FormType = createdForm.FormType,
-                Status = createdForm.Status,
-                SubmissionDate = createdForm.SubmissionDate
-            };
-        }
-
-        public async Task<FormSubmission> SubmitFormAsync(FormSubmissionDto formDto)
-        {
-            if (formDto == null)
-            {
-                throw new InvalidOperationException("Form data is required.");
-            }
-            if (string.IsNullOrEmpty(formDto.StudentId))
-            {
-                throw new InvalidOperationException("Student ID is required.");
-            }
-            if (string.IsNullOrEmpty(formDto.FormType))
-            {
-                throw new InvalidOperationException("Form type is required.");
-            }
-
-            var form = new FormSubmission
-            {
-                StudentId = formDto.StudentId,
-                FormType = formDto.FormType,
-                Status = "Submitted",
+                Status = "Pending",
+                EmailStatus = "Pending",
                 SubmissionDate = DateTime.UtcNow
             };
-
-            await _formRepository.AddFormAsync(form);
-            return form;
+            
+            await _formSubmissionRepository.CreateFormSubmissionAsync(formSubmission);
+            return _formConfigurationService.MapToFormSubmissionDto(formSubmission);
         }
 
         public async Task<FormSubmissionDto> UpdateFormStatusAsync(UpdateStatusDto updateStatusDto)
         {
-            var form = await _formRepository.GetFormByIdAsync(updateStatusDto.SubmissionId);
+            var form = await _formSubmissionRepository.GetFormSubmissionByIdAsync(updateStatusDto.SubmissionId);
             if (form == null)
-            {
-                return null;
-            }
-            await _formRepository.UpdateFormStatusAsync(updateStatusDto.SubmissionId, updateStatusDto.Status);
+                throw new InvalidOperationException($"Form with ID {updateStatusDto.SubmissionId} not found");
+                
             form.Status = updateStatusDto.Status;
-            return new FormSubmissionDto
+            await _formSubmissionRepository.UpdateFormSubmissionAsync(form);
+            
+            return _formConfigurationService.MapToFormSubmissionDto(form);
+        }
+
+        public async Task<List<FormSubmission>> GetFormsAsync(string studentId)
+        {
+            if (string.IsNullOrEmpty(studentId))
             {
-                SubmissionId = form.SubmissionId,
-                StudentId = form.StudentId,
-                FormType = form.FormType,
-                Status = form.Status,
-                SubmissionDate = form.SubmissionDate
+                throw new ArgumentException("Student ID cannot be null or empty", nameof(studentId));
+            }
+
+            var forms = await _formSubmissionRepository.GetFormSubmissionsByStudentIdAsync(studentId);
+            return forms ?? new List<FormSubmission>();
+        }
+
+        public async Task<FormSubmission> SubmitFormAsync(FormSubmissionDto formDto)
+        {
+            var form = new FormSubmission
+            {
+                SubmissionId = Guid.NewGuid().ToString(),
+                StudentId = formDto.StudentId,
+                FullName = formDto.FullName,
+                Email = formDto.Email,
+                Telephone = formDto.Telephone,
+                PostalAddress = formDto.PostalAddress,
+                FormType = formDto.FormType,
+                Status = "Pending",
+                EmailStatus = "Pending",
+                SubmissionDate = DateTime.UtcNow,
+                DateOfBirth = formDto.DateOfBirth,
+                Sponsorship = formDto.Sponsorship,
+                CourseCode = formDto.CourseCode,
+                CourseLecturer = formDto.CourseLecturer,
+                CourseTitle = formDto.CourseTitle,
+                ReceiptNo = formDto.ReceiptNo,
+                PaymentConfirmation = formDto.PaymentConfirmation,
+                CurrentGrade = formDto.CurrentGrade,
+                Campus = formDto.Campus,
+                Semester = formDto.Semester,
+                Year = formDto.Year,
+                Reason = formDto.Reason,
+                SupportingDocuments = formDto.SupportingDocuments,
+                ApplicantSignature = formDto.ApplicantSignature,
+                Date = formDto.Date,
+                Programme = formDto.Programme,
+                ExamDate = formDto.ExamDate,
+                ExamStartTime = formDto.ExamStartTime,
+                ApplyingFor = formDto.ApplyingFor
             };
+
+            await _formSubmissionRepository.CreateFormSubmissionAsync(form);
+            await _formConfigurationService.SendFormSubmissionEmailAsync(formDto.FormType, form.SubmissionId);
+
+            return form;
+        }
+
+        public async Task<FormSubmissionDto?> GetFormSubmissionByIdAsync(string submissionId)
+        {
+            var form = await _formSubmissionRepository.GetFormSubmissionByIdAsync(submissionId);
+            if (form == null)
+                return null;
+
+            return _formConfigurationService.MapToFormSubmissionDto(form);
+        }
+
+        public async Task<List<FormSubmissionDto>> GetFormSubmissionsByStudentIdAsync(string studentId)
+        {
+            if (string.IsNullOrEmpty(studentId))
+            {
+                throw new ArgumentException("Student ID cannot be null or empty", nameof(studentId));
+            }
+
+            var forms = await _formSubmissionRepository.GetFormSubmissionsByStudentIdAsync(studentId);
+            if (forms == null || !forms.Any())
+            {
+                return new List<FormSubmissionDto>();
+            }
+
+            var formDtos = new List<FormSubmissionDto>();
+            foreach (var form in forms)
+            {
+                formDtos.Add(_formConfigurationService.MapToFormSubmissionDto(form));
+            }
+
+            return formDtos;
+        }
+
+        public async Task<bool> CreateFormSubmissionAsync(FormSubmissionDto formDto)
+        {
+            var form = new FormSubmission
+            {
+                SubmissionId = Guid.NewGuid().ToString(),
+                StudentId = formDto.StudentId,
+                FullName = formDto.FullName,
+                Email = formDto.Email,
+                Telephone = formDto.Telephone,
+                PostalAddress = formDto.PostalAddress,
+                FormType = formDto.FormType,
+                Status = "Pending",
+                EmailStatus = "Pending",
+                SubmissionDate = DateTime.UtcNow,
+                DateOfBirth = formDto.DateOfBirth,
+                Sponsorship = formDto.Sponsorship,
+                CourseCode = formDto.CourseCode,
+                CourseLecturer = formDto.CourseLecturer,
+                CourseTitle = formDto.CourseTitle,
+                ReceiptNo = formDto.ReceiptNo,
+                PaymentConfirmation = formDto.PaymentConfirmation,
+                CurrentGrade = formDto.CurrentGrade,
+                Campus = formDto.Campus,
+                Semester = formDto.Semester,
+                Year = formDto.Year,
+                Reason = formDto.Reason,
+                SupportingDocuments = formDto.SupportingDocuments,
+                ApplicantSignature = formDto.ApplicantSignature,
+                Date = formDto.Date,
+                Programme = formDto.Programme,
+                ExamDate = formDto.ExamDate,
+                ExamStartTime = formDto.ExamStartTime,
+                ApplyingFor = formDto.ApplyingFor
+            };
+
+            var result = await _formSubmissionRepository.CreateFormSubmissionAsync(form);
+            await _formConfigurationService.SendFormSubmissionEmailAsync(formDto.FormType, form.SubmissionId);
+
+            return result;
         }
     }
 }

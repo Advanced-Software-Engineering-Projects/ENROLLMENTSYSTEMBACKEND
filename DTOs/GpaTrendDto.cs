@@ -2,7 +2,7 @@
 {
     public class GpaTrendDto
     {
-        public string Semester { get; set; }
+        public required string Semester { get; set; }
         public double GPA { get; set; }
     }
 }

@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  enrollment-api:
+    image: enrollment-api
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "5000:80"
+    depends_on:
+      - sqlserver
+      - forms-service
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=EnrollmentSystem;User=sa;Password=YourStrong!Passw0rd;TrustServerCertificate=True;
+      - ServiceEndpoints__FormsService=http://forms-service/api/
+
+  forms-service:
+    image: forms-service
+    build:
+      context: .
+      dockerfile: Microservices/FormsService/Dockerfile
+    ports:
+      - "5001:80"
+    depends_on:
+      - sqlserver
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=EnrollmentSystem;User=sa;Password=YourStrong!Passw0rd;TrustServerCertificate=True;
+
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=YourStrong!Passw0rd
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver-data:/var/opt/mssql
+
+volumes:
+  sqlserver-data:

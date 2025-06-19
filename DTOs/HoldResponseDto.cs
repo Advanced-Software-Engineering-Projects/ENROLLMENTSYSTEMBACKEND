@@ -2,10 +2,10 @@
 {
     public class HoldResponseDto
     {
-        public string Id { get; set; }
-        public string StudentId { get; set; }
-        public string Service { get; set; }
-        public string Reason { get; set; }
+        public required string Id { get; set; }
+        public required string StudentId { get; set; }
+        public required string Service { get; set; }
+        public required string Reason { get; set; }
         public DateTime CreatedAt { get; set; }
     }
 }

@@ -1,45 +1,46 @@
-﻿using ENROLLMENTSYSTEMBACKEND.Models;
+using ENROLLMENTSYSTEMBACKEND.Models;
+using ENROLLMENTSYSTEMBACKEND.Data;
+using Microsoft.EntityFrameworkCore;
+using System.Threading.Tasks;
 
 namespace ENROLLMENTSYSTEMBACKEND.Repositories
 {
     public class RegistrationPeriodRepository : IRegistrationPeriodRepository
     {
-        private readonly List<RegistrationPeriod> _periods = new List<RegistrationPeriod>(); // Simulated data
+        private readonly EnrollmentInformationDbContext _context;
+
+        public RegistrationPeriodRepository(EnrollmentInformationDbContext context)
+        {
+            _context = context;
+        }
 
         public async Task<RegistrationPeriod> GetCurrentRegistrationPeriodAsync()
         {
-            return await Task.FromResult(_periods.FirstOrDefault(p => p.IsActive));
+            return await _context.RegistrationPeriods
+                .FirstOrDefaultAsync(rp => rp.IsActive);
         }
 
         public async Task<List<RegistrationPeriod>> GetAllRegistrationPeriodsAsync()
         {
-            return await Task.FromResult(_periods);
+            return await _context.RegistrationPeriods.ToListAsync();
         }
 
         public async Task<RegistrationPeriod> GetRegistrationPeriodByIdAsync(string periodId)
         {
-            return await Task.FromResult(_periods.FirstOrDefault(p => p.RegistrationPeriodId == periodId));
+            return await _context.RegistrationPeriods
+                .FirstOrDefaultAsync(rp => rp.RegistrationPeriodId == periodId);
         }
 
         public async Task AddRegistrationPeriodAsync(RegistrationPeriod period)
         {
-            _periods.Add(period);
-            await Task.CompletedTask;
+            _context.RegistrationPeriods.Add(period);
+            await _context.SaveChangesAsync();
         }
 
-        public async Task UpdateRegistrationPeriodAsync(RegistrationPeriod period)
+        public async Task UpdateRegistrationPeriodAsync(RegistrationPeriod registrationPeriod)
         {
-            var existingPeriod = _periods.FirstOrDefault(p => p.RegistrationPeriodId == period.RegistrationPeriodId);
-            if (existingPeriod != null)
-            {
-                existingPeriod.StartDate = period.StartDate;
-                existingPeriod.EndDate = period.EndDate;
-                existingPeriod.StartTime = period.StartTime;
-                existingPeriod.EndTime = period.EndTime;
-                existingPeriod.CourseCodes = period.CourseCodes;
-                existingPeriod.IsActive = period.IsActive;
-            }
-            await Task.CompletedTask;
+            _context.RegistrationPeriods.Update(registrationPeriod);
+            await _context.SaveChangesAsync();
         }
     }
 }
