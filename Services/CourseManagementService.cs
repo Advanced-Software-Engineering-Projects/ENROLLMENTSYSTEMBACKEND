@@ -1,16 +1,20 @@
-﻿using ENROLLMENTSYSTEMBACKEND.DTOs;
+﻿using ENROLLMENTSYSTEMBACKEND.Data;
+using ENROLLMENTSYSTEMBACKEND.DTOs;
 using ENROLLMENTSYSTEMBACKEND.Models;
 using ENROLLMENTSYSTEMBACKEND.Repositories;
+using Microsoft.EntityFrameworkCore;
 
 namespace ENROLLMENTSYSTEMBACKEND.Services
 {
     public class CourseManagementService : ICourseManagementService
     {
         private readonly ICourseManagementRepository _courseManagementRepository;
+        private readonly EnrollmentInformationDbContext _context;
 
-        public CourseManagementService(ICourseManagementRepository courseManagementRepository)
+        public CourseManagementService(ICourseManagementRepository courseManagementRepository, EnrollmentInformationDbContext context)
         {
             _courseManagementRepository = courseManagementRepository;
+            _context = context;
         }
 
         public async Task<CourseRegistrationStatusDto> GetRegistrationStatusAsync()
@@ -41,7 +45,7 @@ namespace ENROLLMENTSYSTEMBACKEND.Services
 
         public async Task OpenCourseRegistrationAsync(CourseManagementDto request)
         {
-            if (request == null || !request.CourseCodes.Any())
+            if (request == null || request.CourseCodes == null || !request.CourseCodes.Any())
             {
                 throw new ArgumentException("Course codes are required");
             }
@@ -76,6 +80,27 @@ namespace ENROLLMENTSYSTEMBACKEND.Services
                 throw new ArgumentException("End date/time cannot be in the past");
             }
 
+            if (_context == null)
+            {
+                throw new InvalidOperationException("Database context is not initialized.");
+            }
+
+            // Update IsActive for matching courses
+            var coursesToUpdate = await _context.Courses
+                .Where(c => request.CourseCodes.Contains(c.CourseCode))
+                .ToListAsync();
+
+            //if (coursesToUpdate.Count != request.CourseCodes.Count)
+            //{
+            //    var missingCodes = request.CourseCodes.Except(coursesToUpdate.Select(c => c.CourseCode)).ToList();
+            //    throw new ArgumentException($"The following course codes were not found: {string.Join(", ", missingCodes)}");
+            //}
+
+            foreach (var course in coursesToUpdate)
+            {
+                course.IsActive = true;
+            }
+
             // Create registration period
             var registrationPeriod = new CourseRegistrationPeriod
             {
@@ -88,6 +113,9 @@ namespace ENROLLMENTSYSTEMBACKEND.Services
             };
 
             await _courseManagementRepository.AddOpenRegistrationAsync(registrationPeriod);
+
+            // Save changes to courses and registration period
+            await _context.SaveChangesAsync();
         }
 
         public async Task CloseCourseRegistrationAsync(CloseCourseRegistrationDto request)

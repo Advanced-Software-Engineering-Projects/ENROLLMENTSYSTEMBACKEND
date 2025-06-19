@@ -46,29 +46,24 @@ namespace ENROLLMENTSYSTEMBACKEND.Controllers
             }
         }
 
-        //Get Student Courses by StudnetId
-        [HttpGet("student/{studentId}")]
-        public async Task<IActionResult> GetStudentById(string studentId)
-        {
-            if (string.IsNullOrEmpty(studentId))
-            {
-                return BadRequest("Student ID is required.");
-            }
-            try
-            {
-                var student = await _programService.GetStudentByIdAsync(studentId);
-                if (student == null)
-                {
-                    return NotFound("Student not found.");
-                }
-                return Ok(student);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error retrieving student by ID: {StudentId}", studentId);
-                return StatusCode(500, "Internal server error while retrieving student.");
-            }
-
-        }
-}
+        ////Get student by StudentId
+        //[HttpGet("student/{studentId}")] // Updated route
+        //public async Task<IActionResult> GetStudentById(string studentId)
+        //{
+        //    try
+        //    {
+        //        var student = await _programService.GetStudentByIdAsync(studentId);
+        //        if (student == null)
+        //        {
+        //            return NotFound($"Student with ID {studentId} not found");
+        //        }
+        //        return Ok(student);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        _logger.LogError(ex, "Error retrieving student");
+        //        return StatusCode(500, "An error occurred while retrieving student");
+        //    }
+        //}
+    }
 }

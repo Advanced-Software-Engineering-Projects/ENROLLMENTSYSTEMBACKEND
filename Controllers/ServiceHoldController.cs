@@ -7,7 +7,7 @@ namespace ENROLLMENTSYSTEMBACKEND.Controllers
 {
     [ApiController]
     [Route("api/service-holds")]
-    [Authorize(Roles = "Admin")]
+    //[Authorize(Roles = "Admin")]
     public class ServiceHoldController : ControllerBase
     {
         private readonly IServiceHoldService _serviceHoldService;
